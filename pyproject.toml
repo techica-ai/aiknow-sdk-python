@@ -27,4 +27,4 @@ dev = [
 
 [[tool.uv.index]]
 name = "github-packages"
-url = "https://pypi.pkg.github.com/your-org/"
+url = "https://pypi.pkg.github.com/techica-ai/"
