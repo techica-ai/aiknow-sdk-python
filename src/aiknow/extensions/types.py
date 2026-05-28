@@ -48,6 +48,7 @@ class StepDeps:
         permissions:  Flat list of RBAC permissions granted to the caller.
         user_context: Arbitrary metadata from the upstream request
                       (e.g., channel, customer tier, agent ID).
+        execution_id: Workflow execution instance ID.
     """
 
     tenant_id: str
@@ -55,6 +56,7 @@ class StepDeps:
     locale: str = "vi"
     permissions: list[str] = field(default_factory=list)
     user_context: dict[str, Any] = field(default_factory=dict)
+    execution_id: str | None = None
 
 
 # ---------------------------------------------------------------------------

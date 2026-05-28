@@ -144,6 +144,7 @@ class BaseAgentExecutor(ABC):
                 tenant_id=ctx.tenant_id,
                 locale=ctx.locale,
                 user_context=ctx.user_context,
+                execution_id=ctx.execution_id,
             )
             result = await fn(deps, **tool_args)
             if isinstance(result, str):

@@ -121,6 +121,7 @@ class SkillDispatcher:
             locale=locale,
             permissions=permissions or [],
             user_context=user_context or {},
+            execution_id=execution_id,
         )
 
         logger.debug(

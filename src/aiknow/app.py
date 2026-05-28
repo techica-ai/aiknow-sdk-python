@@ -578,16 +578,31 @@ class AiknowApp:
                     raise ValueError(
                         f"SOP '{entry.name}' has no transitions defined."
                     )
+                # Resolve triggers from decorator or class attribute
+                raw_triggers = (
+                    entry.metadata.get("triggers")
+                    or getattr(cls, "triggers", None)
+                )
+                triggers_obj = None
+                if raw_triggers is not None:
+                    from aiknow_contracts.workflow import WorkflowTriggers
+                    if isinstance(raw_triggers, dict):
+                        triggers_obj = WorkflowTriggers(**raw_triggers)
+                    else:
+                        triggers_obj = raw_triggers   # already WorkflowTriggers
+
                 # Extract metadata (exclude reserved keys)
                 extra_meta = {
                     k: v for k, v in entry.metadata.items()
-                    if k not in ("id", "initial_state", "human_wait_states")
+                    if k not in ("id", "initial_state", "human_wait_states",
+                                 "triggers", "description")
                 }
                 declaration = SOPDeclaration(
                     type="sop",
                     initial_state=initial_state or None,
                     transitions=transitions,
                     human_wait_states=list(getattr(cls, "human_wait_states", [])),
+                    triggers=triggers_obj,
                     metadata=extra_meta,
                 )
                 workflow_manifests.append(
@@ -617,17 +632,44 @@ class AiknowApp:
                     for slot_name, slot_data in raw_slots.items()
                 }
                 on_complete = (
-                    entry.metadata.get("on_complete_skill")
-                    or getattr(cls, "on_complete_skill", entry.name + "_complete")
+                    entry.metadata.get("on_complete_step")
+                    or entry.metadata.get("on_complete_skill")
+                    or getattr(cls, "on_complete_step", None)
+                    or getattr(cls, "on_complete_skill", None)
+                    or (entry.name + "_complete")
                 )
                 extra_meta = {
                     k: v for k, v in entry.metadata.items()
-                    if k not in ("id", "on_complete_skill")
+                    if k not in ("id", "on_complete_skill", "on_complete_step",
+                                 "triggers", "cognitive_tools")
                 }
+                # Resolve triggers from decorator or class attribute
+                raw_triggers = (
+                    entry.metadata.get("triggers")
+                    or getattr(cls, "triggers", None)
+                )
+                triggers_obj = None
+                if raw_triggers is not None:
+                    from aiknow_contracts.workflow import WorkflowTriggers
+                    if isinstance(raw_triggers, dict):
+                        triggers_obj = WorkflowTriggers(**raw_triggers)
+                    else:
+                        triggers_obj = raw_triggers  # already WorkflowTriggers
+
+                # Resolve cognitive_tools
+                cognitive_tools = (
+                    entry.metadata.get("cognitive_tools")
+                    or getattr(cls, "cognitive_tools", None)
+                    or []
+                )
+
                 declaration = DialogDeclaration(
                     type="dialog",
                     slots=slots,
                     on_complete_skill=on_complete,
+                    on_complete_step=on_complete,
+                    triggers=triggers_obj,
+                    cognitive_tools=cognitive_tools,
                     metadata=extra_meta,
                 )
                 workflow_manifests.append(
@@ -649,6 +691,20 @@ class AiknowApp:
             for entry in self._registry.list_by_type("hook")
         ]
 
+        # Build tool manifests (Phase 2)
+        from aiknow_contracts.extensions import ToolManifestContract
+        tool_manifests = [
+            ToolManifestContract(
+                name=entry.metadata.get("name", entry.name),
+                description=entry.metadata.get("description", {}),
+                parameters_schema=self._tool_registry.get_schema(entry.name) or {},
+                remote=entry.metadata.get("remote", False),
+                required_permissions=entry.metadata.get("required_permissions", []),
+                tags=entry.metadata.get("tags", []),
+            )
+            for entry in self._registry.list_by_type("tool")
+        ]
+
         return AppManifest(
             app_name=self._app_name,
             version=self._app_version,
@@ -656,6 +712,7 @@ class AiknowApp:
             skills=skill_manifests,
             workflows=workflow_manifests,
             hooks=hook_manifests,
+            tools=tool_manifests,
         )
 
     async def _start_listener(self) -> None:
@@ -672,12 +729,17 @@ class AiknowApp:
                 port=self._webhook_port,
                 hmac_secret=self._webhook_secret,
                 advertise_host=self._webhook_advertise_host,
+                tool_registry=self._tool_registry,  # Phase 2: expose /tools/{name}
             )
             await self._listener.start()
             logger.info(
-                "WebhookListener started at http://%s:%d",
+                "WebhookListener started at http://%s:%d (tools: %d remote)",
                 self._webhook_host,
                 self._webhook_port,
+                sum(
+                    1 for e in self._registry.list_by_type("tool")
+                    if e.metadata.get("remote", False)
+                ),
             )
         except Exception as exc:  # noqa: BLE001
             logger.critical(
@@ -711,11 +773,14 @@ class AiknowApp:
                 manifest.model_dump()
             )
             logger.info(
-                "Manifest uploaded [tenant=%s]: %d skill(s), %d workflow(s), %d hook(s) webhook=%s",
+                "Manifest uploaded [tenant=%s]: %d step(s), %d workflow(s), %d hook(s), "
+                "%d tool(s) (%d remote) webhook=%s",
                 self.tenant_id,
                 len(manifest.skills),
                 len(manifest.workflows),
                 len(manifest.hooks),
+                len(manifest.tools),
+                sum(1 for t in manifest.tools if t.remote),
                 manifest.webhook_url,
             )
         except ImportError as exc:

@@ -111,22 +111,41 @@ class HookEventPayload(BaseModel):
     event_id: str | None = None
     payload: dict[str, Any] = Field(default_factory=dict)
 
+class ToolInvocationPayload(BaseModel):
+    """JSON body sent by the Platform's CognitiveActionExecutor (via ToolResolver)
+    when invoking an App remote tool via webhook.
 
-# ---------------------------------------------------------------------------
-# WebhookListener
-# ---------------------------------------------------------------------------
+    Route: POST /tools/{tool_name}
+
+    Only @tool(remote=True) functions are callable via this endpoint.
+    Attempting to call a remote=False tool returns HTTP 403.
+    """
+
+    tool_name: str
+    """Tool name (must match @tool decorator name and URL path)."""
+
+    execution_id: str = ""
+    tenant_id: str
+    params: dict[str, Any] = Field(default_factory=dict)
+    session_id: str | None = None
+    locale: str = "vi"
+    user_context: dict[str, Any] = Field(default_factory=dict)
+
+
 
 
 class WebhookListener:
     """FastAPI-based HTTP server receiving Platform → App callbacks.
 
     Args:
-        registry:    The app's LocalExtensionRegistry (skills + hooks).
-        host:        Bind host (default: '0.0.0.0').
-        port:        Listen port (default: 9000).
-        hmac_secret: Shared secret for HMAC-SHA256 signature verification.
-                     If None, signature checking is skipped (development mode).
-         path_prefix: URL prefix for all routes (default: '').
+        registry:     The app's LocalExtensionRegistry (skills + hooks).
+        host:         Bind host (default: '0.0.0.0').
+        port:         Listen port (default: 9000).
+        hmac_secret:  Shared secret for HMAC-SHA256 signature verification.
+                      If None, signature checking is skipped (development mode).
+        path_prefix:  URL prefix for all routes (default: '').
+        tool_registry: Phase 2 — AppToolRegistry for @tool(remote=True) invocations.
+                      If None, /tools/{name} route returns 503.
     """
 
     def __init__(
@@ -137,6 +156,7 @@ class WebhookListener:
         hmac_secret: str | None = None,
         path_prefix: str = "",
         advertise_host: str | None = None,
+        tool_registry: Any | None = None,  # AppToolRegistry — avoids circular import
     ) -> None:
         self._registry = registry
         self._host = host
@@ -145,6 +165,7 @@ class WebhookListener:
         self._path_prefix = path_prefix.rstrip("/")
         self._advertise_host = advertise_host  # override for manifest URL
         self._dispatcher = SkillDispatcher(registry)
+        self._tool_registry = tool_registry  # AppToolRegistry | None
         self._server_task: asyncio.Task | None = None
         self._app = self._build_app()
 
@@ -336,15 +357,108 @@ class WebhookListener:
 
             return {"accepted": True, "event_type": event_type}
 
+        # ── /tools/{tool_name} — Phase 2: App remote tool invocation ─────────────
+        @app.post(
+            f"{prefix}/tools/{{tool_name}}",
+            summary="Invoke an App remote tool (called by Platform CognitiveAction)",
+        )
+        async def invoke_tool(
+            tool_name: str,
+            request: Request,
+        ) -> JSONResponse:
+            body = await request.body()
+            await self._verify(body, request)
+
+            if self._tool_registry is None:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Tool registry not configured on this WebhookListener.",
+                )
+
+            try:
+                payload = ToolInvocationPayload.model_validate_json(body)
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Invalid tool invocation payload: {exc}",
+                ) from exc
+
+            # Verify tool name matches URL path
+            if payload.tool_name != tool_name:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"Path tool_name '{tool_name}' does not match "
+                        f"body tool_name '{payload.tool_name}'."
+                    ),
+                )
+
+            fn = self._tool_registry.get(tool_name)
+            if fn is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Tool '{tool_name}' not registered in AppToolRegistry.",
+                )
+
+            # Only remote=True tools are callable via this endpoint
+            tool_meta = getattr(fn, "_tool_meta", {})
+            if not tool_meta.get("remote", False):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=(
+                        f"Tool '{tool_name}' is not exposed remotely (remote=False). "
+                        "Use @tool(remote=True) to enable Platform invocation."
+                    ),
+                )
+
+            logger.info(
+                "WebhookListener: invoke tool='%s' execution_id='%s' tenant='%s'",
+                tool_name, payload.execution_id, payload.tenant_id,
+            )
+
+            # Build StepDeps and call the tool function
+            from aiknow.extensions.types import StepDeps
+            deps = StepDeps(
+                tenant_id=payload.tenant_id,
+                session_id=payload.session_id,
+                locale=payload.locale,
+                user_context=payload.user_context,
+                execution_id=payload.execution_id or None,
+            )
+
+            try:
+                import json as _json
+                result = await fn(deps, **payload.params)
+                if not isinstance(result, str):
+                    result = _json.dumps(result, ensure_ascii=False, default=str)
+                return JSONResponse(content={"result": result})
+            except Exception as exc:
+                logger.exception(
+                    "WebhookListener: tool '%s' raised: %s", tool_name, exc
+                )
+                return JSONResponse(
+                    content={"result": f"[Tool error: {exc}]"},
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
         @app.get(f"{prefix}/health", summary="Health check")
         async def health() -> dict:
             # list_by_type("step") includes both @step and @skill (legacy) entries
             steps = self._registry.list_by_type("step")
+            tool_count = self._tool_registry.size() if self._tool_registry else 0
+            remote_tools = [
+                name for name in (
+                    [m.name for m in self._tool_registry.list_all()] if self._tool_registry else []
+                )
+                if (fn := self._tool_registry.get(name)) and getattr(fn, "_tool_meta", {}).get("remote", False)
+            ]
             return {
                 "status": "ok",
                 "steps": len(steps),
-                "skills": len(steps),  # backward-compat alias — same value
+                "skills": len(steps),  # backward-compat alias
                 "hooks": len(self._registry.list_by_type("hook")),
+                "tools": tool_count,
+                "remote_tools": remote_tools,
             }
 
         return app

@@ -10,6 +10,9 @@ Public API:
     ContextProvider    — Abstract base for context providers
     ExecutionStateProvider  — Built-in: inject SOP execution state
     SessionInfoProvider     — Built-in: inject session metadata
+
+    AIKnowConversationAgent — Phase 5: AG-UI bridge to Platform ConversationAPI.
+                              Subclass or instantiate directly for CopilotKit integration.
 """
 from aiknow.agents.base import AgentContext, AgentMeta, ToolMeta
 from aiknow.agents.context_providers import (
@@ -20,6 +23,7 @@ from aiknow.agents.context_providers import (
 )
 from aiknow.agents.tool_registry import AppToolRegistry
 from aiknow.agents.runtime import AgentRuntime
+from aiknow.agents.conversation_agent import AIKnowConversationAgent
 
 __all__ = [
     # Core types
@@ -35,4 +39,6 @@ __all__ = [
     "ExecutionStateProvider",
     "SessionInfoProvider",
     "BUILTIN_PROVIDERS",
+    # Phase 5: CopilotKit AG-UI bridge
+    "AIKnowConversationAgent",
 ]

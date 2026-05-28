@@ -147,6 +147,7 @@ def tool(
     description: dict[str, str] | None = None,
     required_permissions: list[str] | None = None,
     tags: list[str] | None = None,
+    remote: bool = False,
 ) -> Callable[[Callable], Callable]:
     """Declare an async function as an Agent Tool.
 
@@ -160,24 +161,37 @@ def tool(
         description:          Localised description exposed to the LLM.
         required_permissions: RBAC permissions required to call this tool.
         tags:                 Freeform tags for grouping/filtering.
+        remote:               Phase 2 — If True, exposes the tool via
+                              POST {webhook_url}/tools/{name} so the Platform's
+                              CognitiveActionExecutor can call it during LLM
+                              reasoning. Default False (in-process only).
 
     The decorated function must be an async function. Return type should be
     a str (description of the result for the LLM to reason about)::
 
-        async def fn(**params) -> str
+        async def fn(deps: StepDeps, **params) -> str
 
-    Example::
+    Example (in-process only — called by @copilot_agent)::
 
         @tool("get_session_context", description={"vi": "Lấy thông tin session hiện tại"})
-        async def get_session_context(session_id: str) -> str:
+        async def get_session_context(deps: StepDeps, session_id: str) -> str:
             session = await mgr.get_session(session_id)
             return f"Caller: {session.caller_id}, Status: {session.status}"
+
+    Example (remote=True — callable by Platform CognitiveAction via HTTP)::
+
+        @tool("check_calendar", description={"vi": "Kiểm tra lịch trống"}, remote=True)
+        async def check_calendar(deps: StepDeps, date: str, department: str) -> str:
+            # This is callable by Platform's CognitiveActionExecutor
+            available = await calendar_api.get_slots(date, department)
+            return f"Available slots: {available}"
     """
     meta: dict[str, Any] = {
         "name": name,
         "description": description or {},
         "required_permissions": required_permissions or [],
         "tags": tags or [],
+        "remote": remote,
     }
 
     def decorator(fn: Callable) -> Callable:
@@ -200,8 +214,13 @@ def sop(
     initial_state: str | None = None,
     human_wait_states: list[str] | None = None,
     metadata: dict[str, Any] | None = None,
+    triggers: Any | None = None,
+    description: dict[str, str] | None = None,
 ) -> Callable[[type], type]:
     """Declare a class as an AIKnow SOP (Standard Operating Procedure).
+
+    A SOP defines a structured workflow with explicit state transitions.
+    Unlike @dialog (slot-filling), a SOP models a full FSM with branching logic.
 
     The class must define a ``transitions`` dict:
         transitions: dict[str, dict[str, str]]
@@ -216,10 +235,23 @@ def sop(
         initial_state:      First state to enter. Overrides class attribute.
         human_wait_states:  States where the workflow suspends for human input.
         metadata:           Extra metadata (description, sla_seconds, tags...).
+        triggers:           Optional WorkflowTriggers dict or instance.
+                            Used by the Platform IntentRouter to activate this SOP
+                            when user messages match keywords/examples.
+                            If omitted, the SOP must be activated explicitly
+                            (e.g. by a downstream step in another workflow).
+        description:        Localised description dict {locale: text} for the
+                            IntentRouter's LLM classify path.
 
     Example::
 
-        @sop("refund_flow", initial_state="verify_customer")
+        @sop("refund_flow",
+             initial_state="verify_customer",
+             triggers={
+                 "keywords": {"vi": ["đổi trả", "hoàn tiền", "khiếu nại"]},
+                 "description": {"vi": "Xử lý yêu cầu đổi trả và hoàn tiền"},
+             },
+        )
         class RefundFlow:
             transitions = {
                 "verify_customer": {
@@ -237,16 +269,20 @@ def sop(
         "id": sop_id,
         "initial_state": initial_state,
         "human_wait_states": human_wait_states or [],
+        "triggers": triggers,
+        "description": description or {},
         **(metadata or {}),
     }
 
     def decorator(cls: type) -> type:
         cls._sop_meta = sop_meta  # type: ignore[attr-defined]
-        # Propagate initial_state to class if not already set
+        # Propagate attributes to class if not already set
         if initial_state and not hasattr(cls, "initial_state"):
-            cls.initial_state = initial_state
+            cls.initial_state = initial_state  # type: ignore[attr-defined]
         if human_wait_states and not hasattr(cls, "human_wait_states"):
-            cls.human_wait_states = human_wait_states
+            cls.human_wait_states = human_wait_states  # type: ignore[attr-defined]
+        if triggers is not None and not hasattr(cls, "triggers"):
+            cls.triggers = triggers  # type: ignore[attr-defined]
         _default_registry.register(
             ExtensionEntry(name=sop_id, ext_type="sop", fn=cls, metadata=sop_meta)
         )
@@ -262,63 +298,82 @@ def sop(
 
 def dialog(
     dialog_id: str,
-    on_complete_skill: str,
+    on_complete_skill: str = "",
+    on_complete_step: str = "",
     metadata: dict[str, Any] | None = None,
+    triggers: Any | None = None,
+    cognitive_tools: list[str] | None = None,
 ) -> Callable[[type], type]:
     """Declare a class as an AIKnow Dialog (slot-filling conversation flow).
 
     A Dialog defines a structured conversational flow that:
     1. Checks which information slots have been collected from the user.
     2. For each missing required slot, prompts the user to provide it.
-    3. Once all required slots are filled, invokes ``on_complete_skill``.
+    3. Once all required slots are filled, invokes ``on_complete_step``.
 
     The class must define a ``slots`` dict:
         slots: dict[str, dict]
             # slot_name → SlotDefinition dict
             # Each SlotDefinition must have at minimum: 'prompt' (str)
-            # Optional fields: type, required, default, ui_type, options
+            # Optional fields: type, required, default, ui_type, options,
+            #   validation (dict with extract_from_context, allow_relative, etc.)
 
     Args:
         dialog_id:          Unique dialog identifier (e.g. 'product_inquiry').
-        on_complete_skill:  Name of the step/skill invoked when all required
-                            slots are collected. Receives slot values via context.
+        on_complete_step:   Name of the @step invoked when all required slots
+                            are collected. Receives slot values via context.
+        on_complete_skill:  Deprecated alias for on_complete_step.
         metadata:           Extra metadata (description, tags...).
+        triggers:           Optional WorkflowTriggers dict or instance.
+                            Used by the Platform IntentRouter to activate this
+                            dialog when user messages match keywords/examples.
+                            If omitted, the dialog must be activated explicitly.
+        cognitive_tools:    Optional list of tool names for Phase 2 LLM slots.
+                            These tools are available to ALL CognitiveAction
+                            steps in this dialog. Specific slots can override
+                            via SlotValidation.verify_with_tool.
 
     Example::
 
-        @dialog("product_inquiry", on_complete_skill="lookup_product")
-        class ProductInquiry:
+        @dialog("book_appointment",
+                on_complete_step="confirm_booking",
+                cognitive_tools=["check_calendar"],
+                triggers={"keywords": {"vi": ["đặt lịch", "hẹn khám"]}},
+        )
+        class BookAppointment:
             slots = {
-                "product_code": {
+                "customer_name": {
                     "type": "string",
-                    "prompt": "Vui lòng cho biết mã sản phẩm bạn muốn hỏi?",
+                    "prompt": "Tên khách hàng?",
                     "required": True,
+                    "validation": {"extract_from_context": True},
                 },
-                "quantity": {
-                    "type": "integer",
-                    "prompt": "Bạn muốn đặt bao nhiêu sản phẩm?",
-                    "required": False,
-                    "default": 1,
-                    "ui_type": "options",
-                    "options": ["1", "2", "5", "10"],
+                "appointment_date": {
+                    "type": "date",
+                    "prompt": "Ngày hẹn?",
+                    "validation": {"allow_relative": True, "min_date_offset_days": 1},
                 },
             }
 
-    The Platform's DialogDeclarationCompiler auto-generates the FSM:
-        check_slots → ask_{slot} [human_wait] → update_{slot} → check_slots
-        check_slots → on_complete (when all slots satisfied)
+    The Platform's DialogDeclarationCompiler auto-generates the FSM.
     """
+    _on_complete = on_complete_step or on_complete_skill
     dialog_meta: dict[str, Any] = {
         "id": dialog_id,
-        "on_complete_skill": on_complete_skill,
+        "on_complete_skill": _on_complete,   # legacy key preserved
+        "on_complete_step": _on_complete,    # Phase 2 key
+        "triggers": triggers,
+        "cognitive_tools": cognitive_tools or [],
         **(metadata or {}),
     }
 
     def decorator(cls: type) -> type:
         cls._dialog_meta = dialog_meta  # type: ignore[attr-defined]
-        # Propagate on_complete_skill if not already set on class
+        # Propagate on_complete_step if not already set on class
         if not hasattr(cls, "on_complete_skill"):
-            cls.on_complete_skill = on_complete_skill  # type: ignore[attr-defined]
+            cls.on_complete_skill = _on_complete  # type: ignore[attr-defined]
+        if not hasattr(cls, "on_complete_step"):
+            cls.on_complete_step = _on_complete  # type: ignore[attr-defined]
         _default_registry.register(
             ExtensionEntry(name=dialog_id, ext_type="dialog", fn=cls, metadata=dialog_meta)
         )
