@@ -3,16 +3,16 @@ aiknow.extensions — public extension API for AIKnow app developers.
 
 Exports::
 
-    from aiknow.extensions import step, sop, hook, parser, tool
+    from aiknow.extensions import step, sop, dialog, hook, parser, tool
     from aiknow.extensions import StepDeps, StepResult, HookEvent
     from aiknow.extensions import copilot_agent, rag_agent, autonomous_agent
     from aiknow.extensions import router_agent, supervisor_agent, conversation_agent
 
 Deprecated (use step instead of skill, StepDeps instead of AppSkillDeps, etc.)::
 
-    from aiknow.extensions import skill          # → use step
-    from aiknow.extensions import AppSkillDeps   # → use StepDeps
-    from aiknow.extensions import SkillResult    # → use StepResult
+    from aiknow.extensions import skill          → use step
+    from aiknow.extensions import AppSkillDeps   → use StepDeps
+    from aiknow.extensions import SkillResult    → use StepResult
 """
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ from aiknow.extensions._decorators import (
     autonomous_agent,
     conversation_agent,
     copilot_agent,
+    dialog,
     hook,
     parser,
     rag_agent,
@@ -39,9 +40,10 @@ AppSkillDeps = StepDeps   # noqa: N816 — deprecated alias
 SkillResult = StepResult  # noqa: N816 — deprecated alias
 
 __all__ = [
-    # Decorators — SOP
+    # Decorators — SOP & Dialog
     "step",
     "sop",
+    "dialog",
     "hook",
     "parser",
     # Decorators — Agent Tools

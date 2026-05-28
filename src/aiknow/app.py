@@ -254,6 +254,27 @@ class AiknowApp:
         self._registry.register(entry)
         logger.debug("Registered SOP: %s", meta["id"])
 
+    def register_dialog(self, cls: type) -> None:
+        """Register a @dialog-decorated class.
+
+        Args:
+            cls: A class decorated with ``@dialog(...)``.
+
+        Raises:
+            TypeError: If ``cls`` is not decorated with ``@dialog``.
+        """
+        if not hasattr(cls, "_dialog_meta"):
+            raise TypeError(
+                f"'{cls.__name__}' is not decorated with @dialog. "
+                "Apply @dialog(...) before calling register_dialog()."
+            )
+        meta: dict[str, Any] = cls._dialog_meta
+        entry = ExtensionEntry(
+            name=meta["id"], ext_type="dialog", fn=cls, metadata=meta
+        )
+        self._registry.register(entry)
+        logger.debug("Registered Dialog: %s", meta["id"])
+
     def register_hook(self, event_type: str, fn: Callable) -> None:
         """Register a hook handler for a specific event type.
 
@@ -479,18 +500,22 @@ class AiknowApp:
         desc = self.describe()
         steps = desc.get("steps", [])
         sops = desc.get("sops", [])
+        dialogs = desc.get("dialogs", [])
         hooks = desc.get("hooks", [])
         parsers = desc.get("parsers", [])
         logger.info(
-            "AiknowApp started [tenant=%s]: %d step(s), %d SOP(s), %d hook(s), %d parser(s)",
-            self.tenant_id, len(steps), len(sops), len(hooks), len(parsers),
+            "AiknowApp started [tenant=%s]: %d step(s), %d SOP(s), %d dialog(s), "
+            "%d hook(s), %d parser(s)",
+            self.tenant_id, len(steps), len(sops), len(dialogs), len(hooks), len(parsers),
         )
         if steps:
-            logger.info("Steps: %s", [s["name"] for s in steps])
+            logger.info("Steps:   %s", [s["name"] for s in steps])
         if sops:
-            logger.info("SOPs:  %s", [s.get("id") for s in sops])
+            logger.info("SOPs:    %s", [s.get("id") for s in sops])
+        if dialogs:
+            logger.info("Dialogs: %s", [d.get("id") for d in dialogs])
         if hooks:
-            logger.info("Hooks: %s", [h.get("event_type") for h in hooks])
+            logger.info("Hooks:   %s", [h.get("event_type") for h in hooks])
 
         self._started = True
 
@@ -501,18 +526,28 @@ class AiknowApp:
     def _build_manifest(self) -> "Any":
         """Construct an AppManifest from the current local registry.
 
-        Imports aiknow_contracts lazily to keep this module importable
-        even without the contracts package installed.
+        SDK does NOT compile SOP/Dialog classes into WorkflowDefinition here.
+        Instead, it extracts class attributes into SOPDeclaration / DialogDeclaration
+        (plain Pydantic models from aiknow_contracts) and wraps them in
+        WorkflowManifestContract. The Platform's compilers do the actual graph
+        compilation server-side.
+
+        This design keeps SDK dependency-free from aiknow-core, enabling
+        future SDK implementations in JS, Go, etc.
 
         Returns:
             AppManifest Pydantic model ready for serialisation.
         """
-        # Lazy import — contracts optional dep, not required for offline mode
         from aiknow_contracts.extensions import (
             AppManifest,
             HookManifestContract,
             SkillManifestContract,
-            SOPManifestContract,
+            WorkflowManifestContract,
+        )
+        from aiknow_contracts.workflow import (
+            DialogDeclaration,
+            SlotDefinition,
+            SOPDeclaration,
         )
 
         # Build skill manifests
@@ -527,21 +562,84 @@ class AiknowApp:
             for entry in self._registry.list_by_type("step")
         ]
 
-        # Build SOP manifests — compile each SOP class to WorkflowDefinition
-        sop_manifests: list[SOPManifestContract] = []
+        workflow_manifests: list[WorkflowManifestContract] = []
+
+        # @sop → SOPDeclaration (extract class attributes, NO graph compilation)
         for entry in self._registry.list_by_type("sop"):
+            cls = entry.fn
             try:
-                definition_dict = self._compile_sop_to_dict(entry)
-                sop_manifests.append(
-                    SOPManifestContract(
-                        sop_id=entry.name,
+                # Resolve initial_state: decorator wins, then class attribute
+                initial_state = (
+                    entry.metadata.get("initial_state")
+                    or getattr(cls, "initial_state", None)
+                )
+                transitions = getattr(cls, "transitions", None)
+                if not transitions:
+                    raise ValueError(
+                        f"SOP '{entry.name}' has no transitions defined."
+                    )
+                # Extract metadata (exclude reserved keys)
+                extra_meta = {
+                    k: v for k, v in entry.metadata.items()
+                    if k not in ("id", "initial_state", "human_wait_states")
+                }
+                declaration = SOPDeclaration(
+                    type="sop",
+                    initial_state=initial_state or None,
+                    transitions=transitions,
+                    human_wait_states=list(getattr(cls, "human_wait_states", [])),
+                    metadata=extra_meta,
+                )
+                workflow_manifests.append(
+                    WorkflowManifestContract(
+                        workflow_id=entry.name,
                         version=entry.metadata.get("version", "1.0"),
-                        definition=definition_dict,
+                        declaration=declaration,
                     )
                 )
             except Exception as exc:  # noqa: BLE001
                 logger.warning(
-                    "Skipping SOP '%s' in manifest: compile error — %s",
+                    "Skipping SOP '%s' in manifest: extraction error — %s",
+                    entry.name, exc,
+                )
+
+        # @dialog → DialogDeclaration (extract class attributes, NO compilation)
+        for entry in self._registry.list_by_type("dialog"):
+            cls = entry.fn
+            try:
+                raw_slots: dict = getattr(cls, "slots", {})
+                slots = {
+                    slot_name: (
+                        SlotDefinition(**slot_data)
+                        if isinstance(slot_data, dict)
+                        else slot_data  # already a SlotDefinition instance
+                    )
+                    for slot_name, slot_data in raw_slots.items()
+                }
+                on_complete = (
+                    entry.metadata.get("on_complete_skill")
+                    or getattr(cls, "on_complete_skill", entry.name + "_complete")
+                )
+                extra_meta = {
+                    k: v for k, v in entry.metadata.items()
+                    if k not in ("id", "on_complete_skill")
+                }
+                declaration = DialogDeclaration(
+                    type="dialog",
+                    slots=slots,
+                    on_complete_skill=on_complete,
+                    metadata=extra_meta,
+                )
+                workflow_manifests.append(
+                    WorkflowManifestContract(
+                        workflow_id=entry.name,
+                        version=entry.metadata.get("version", "1.0"),
+                        declaration=declaration,
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "Skipping Dialog '%s' in manifest: extraction error — %s",
                     entry.name, exc,
                 )
 
@@ -556,36 +654,9 @@ class AiknowApp:
             version=self._app_version,
             tenant_id=self.tenant_id,
             skills=skill_manifests,
-            sops=sop_manifests,
+            workflows=workflow_manifests,
             hooks=hook_manifests,
         )
-
-    def _compile_sop_to_dict(self, entry: "ExtensionEntry") -> dict:
-        """Compile a @sop class → WorkflowDefinition → plain dict.
-
-        Uses SOPClassCompiler from aiknow_core (lazy import so SDK
-        stays importable without core).
-
-        Args:
-            entry: The SOP ExtensionEntry from the local registry.
-
-        Returns:
-            Plain dict representation of the compiled WorkflowDefinition.
-
-        Raises:
-            SOPCompileError: If the SOP class is structurally invalid.
-            ImportError:     If aiknow_core is not available in this environment.
-        """
-        from aiknow_core.workflow.compiler import SOPClassCompiler
-
-        compiler = SOPClassCompiler(tenant_id=self.tenant_id)
-        definition = compiler.compile(
-            entry.fn,  # The @sop-decorated class
-            sop_id=entry.name,
-        )
-        # Serialise to plain dict using the same helper as the repository
-        from aiknow_adapters.db.repositories.sop_repository import _to_dict
-        return _to_dict(definition)
 
     async def _start_listener(self) -> None:
         """Start the WebhookListener in a background asyncio task.
@@ -640,10 +711,10 @@ class AiknowApp:
                 manifest.model_dump()
             )
             logger.info(
-                "Manifest uploaded [tenant=%s]: %d skill(s), %d SOP(s), %d hook(s) webhook=%s",
+                "Manifest uploaded [tenant=%s]: %d skill(s), %d workflow(s), %d hook(s) webhook=%s",
                 self.tenant_id,
                 len(manifest.skills),
-                len(manifest.sops),
+                len(manifest.workflows),
                 len(manifest.hooks),
                 manifest.webhook_url,
             )

@@ -118,7 +118,7 @@ class AsyncAIKnowClient:
             builder = SpanBuilder(trace_type="conversation", session_id=thread_id)
             with builder.span("intent.detect") as s:
                 result = await detect_intent(text)
-                s.set("intent.sop_id", result.sop_id)
+                s.set("intent.workflow_id", result.workflow_id)
 
             trace_dict, spans_list = builder.flush()
             await client.push_trace(trace_dict, spans_list)

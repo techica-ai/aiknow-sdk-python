@@ -87,8 +87,8 @@ def test_build_manifest_includes_sops():
 
     manifest = app._build_manifest()
 
-    assert len(manifest.sops) == 1
-    assert manifest.sops[0].sop_id == "refund_flow"
+    assert len(manifest.workflows) == 1
+    assert manifest.workflows[0].workflow_id == "refund_flow"
 
 
 def test_build_manifest_sop_contains_definition():
@@ -97,10 +97,9 @@ def test_build_manifest_sop_contains_definition():
 
     manifest = app._build_manifest()
 
-    defn = manifest.sops[0].definition
-    assert "initial_state" in defn
-    assert "nodes" in defn
-    assert defn["initial_state"] == "verify"
+    defn = manifest.workflows[0].declaration
+    assert defn is not None
+    assert defn.initial_state == "verify"
 
 
 def test_build_manifest_includes_hooks():
@@ -123,7 +122,7 @@ def test_build_manifest_empty_registry():
     app = _make_app()
     manifest = app._build_manifest()
     assert manifest.skills == []
-    assert manifest.sops == []
+    assert manifest.workflows == []
     assert manifest.hooks == []
 
 
@@ -142,7 +141,7 @@ def test_build_manifest_sop_compile_error_skipped(caplog):
     with caplog.at_level(logging.WARNING, logger="aiknow.app"):
         manifest = app._build_manifest()
 
-    assert manifest.sops == []
+    assert manifest.workflows == []
     assert any("broken_sop" in rec.message for rec in caplog.records)
 
 
@@ -168,7 +167,7 @@ async def test_upload_manifest_calls_extensions_resource():
     call_arg = mock_client.extensions.register_manifest.call_args[0][0]
     assert call_arg["tenant_id"] == "acme"
     assert len(call_arg["skills"]) == 1
-    assert len(call_arg["sops"]) == 1
+    assert len(call_arg["workflows"]) == 1
 
 
 @pytest.mark.asyncio

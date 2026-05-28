@@ -33,7 +33,7 @@ def rich_ctx() -> AgentContext:
         tenant_id="acme",
         session_id="sess-abc",
         execution_id="exec-001",
-        sop_id="refund_flow",
+        workflow_id="refund_flow",
         current_state="verify_customer",
         execution_status="running",
         skill_outputs={"verify_customer": {"customer_id": "C001"}},
@@ -83,7 +83,7 @@ def test_toolbox_load_all(toolbox):
     expected = [
         "kb_search", "kb_list_sources", "kb_get_document",
         "get_execution_status", "list_executions", "advance_execution",
-        "escalate_to_supervisor", "get_sop_definition",
+        "escalate_to_supervisor", "get_workflow_definition",
         "get_session_info", "get_conversation_history", "save_agent_note",
         "format_currency", "current_datetime",
     ]

@@ -256,6 +256,78 @@ def sop(
 
 
 # ---------------------------------------------------------------------------
+# @dialog
+# ---------------------------------------------------------------------------
+
+
+def dialog(
+    dialog_id: str,
+    on_complete_skill: str,
+    metadata: dict[str, Any] | None = None,
+) -> Callable[[type], type]:
+    """Declare a class as an AIKnow Dialog (slot-filling conversation flow).
+
+    A Dialog defines a structured conversational flow that:
+    1. Checks which information slots have been collected from the user.
+    2. For each missing required slot, prompts the user to provide it.
+    3. Once all required slots are filled, invokes ``on_complete_skill``.
+
+    The class must define a ``slots`` dict:
+        slots: dict[str, dict]
+            # slot_name → SlotDefinition dict
+            # Each SlotDefinition must have at minimum: 'prompt' (str)
+            # Optional fields: type, required, default, ui_type, options
+
+    Args:
+        dialog_id:          Unique dialog identifier (e.g. 'product_inquiry').
+        on_complete_skill:  Name of the step/skill invoked when all required
+                            slots are collected. Receives slot values via context.
+        metadata:           Extra metadata (description, tags...).
+
+    Example::
+
+        @dialog("product_inquiry", on_complete_skill="lookup_product")
+        class ProductInquiry:
+            slots = {
+                "product_code": {
+                    "type": "string",
+                    "prompt": "Vui lòng cho biết mã sản phẩm bạn muốn hỏi?",
+                    "required": True,
+                },
+                "quantity": {
+                    "type": "integer",
+                    "prompt": "Bạn muốn đặt bao nhiêu sản phẩm?",
+                    "required": False,
+                    "default": 1,
+                    "ui_type": "options",
+                    "options": ["1", "2", "5", "10"],
+                },
+            }
+
+    The Platform's DialogDeclarationCompiler auto-generates the FSM:
+        check_slots → ask_{slot} [human_wait] → update_{slot} → check_slots
+        check_slots → on_complete (when all slots satisfied)
+    """
+    dialog_meta: dict[str, Any] = {
+        "id": dialog_id,
+        "on_complete_skill": on_complete_skill,
+        **(metadata or {}),
+    }
+
+    def decorator(cls: type) -> type:
+        cls._dialog_meta = dialog_meta  # type: ignore[attr-defined]
+        # Propagate on_complete_skill if not already set on class
+        if not hasattr(cls, "on_complete_skill"):
+            cls.on_complete_skill = on_complete_skill  # type: ignore[attr-defined]
+        _default_registry.register(
+            ExtensionEntry(name=dialog_id, ext_type="dialog", fn=cls, metadata=dialog_meta)
+        )
+        return cls
+
+    return decorator
+
+
+# ---------------------------------------------------------------------------
 # @hook
 # ---------------------------------------------------------------------------
 

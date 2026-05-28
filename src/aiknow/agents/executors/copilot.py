@@ -204,7 +204,7 @@ class CopilotAgentExecutor(BaseAgentExecutor):
                 "tenant_id": ctx.tenant_id,
                 "session_id": ctx.session_id,
                 "execution_id": ctx.execution_id,
-                "sop_id": ctx.sop_id,
+                "workflow_id": ctx.workflow_id,
                 "current_state": ctx.current_state,
                 "execution_status": ctx.execution_status,
             }

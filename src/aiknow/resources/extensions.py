@@ -36,7 +36,7 @@ class AsyncExtensionsResource:
         """Upload the full AppManifest to the Platform.
 
         The Platform processes this by:
-            - Upserting all SOP definitions into the SOP registry.
+            - Upserting all workflow definitions into the workflow registry.
             - Registering skill endpoint URLs for remote invocation.
             - Setting up webhook subscriptions if webhook_url is provided.
 
@@ -56,9 +56,9 @@ class AsyncExtensionsResource:
             )
             raise_for_status("ExtensionsResource.register_manifest", response)
             logger.debug(
-                "Manifest uploaded: %d skills, %d SOPs, %d hooks",
+                "Manifest uploaded: %d skills, %d workflows, %d hooks",
                 len(manifest_dict.get("skills", [])),
-                len(manifest_dict.get("sops", [])),
+                len(manifest_dict.get("workflows", [])),
                 len(manifest_dict.get("hooks", [])),
             )
         except Exception as exc:

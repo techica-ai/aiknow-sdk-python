@@ -58,10 +58,10 @@ class ContextProvider(ABC):
 
 
 class ExecutionStateProvider(ContextProvider):
-    """Injects active SOP execution state into the agent's system prompt.
+    """Injects active workflow execution state into the agent's system prompt.
 
     Generates a structured Markdown block with:
-    - Active SOP name and current state
+    - Active workflow name and current state
     - Execution status (running / waiting_human / completed)
     - Accumulated step outputs from previous states
     - Available transitions from current state
@@ -77,8 +77,8 @@ class ExecutionStateProvider(ContextProvider):
             return ""
 
         lines = [
-            "## Active SOP Execution",
-            f"- **SOP**: `{ctx.sop_id or 'unknown'}`",
+            "## Active Workflow Execution",
+            f"- **Workflow**: `{ctx.workflow_id or 'unknown'}`",
             f"- **Execution ID**: `{ctx.execution_id}`",
             f"- **Current State**: `{ctx.current_state or 'unknown'}`",
             f"- **Status**: `{ctx.execution_status}`",

@@ -15,22 +15,22 @@ class AgentContext:
     """Runtime context injected into every agent invocation.
 
     Attributes:
-        tenant_id:      Owning tenant.
-        session_id:     Current WebSocket / HTTP session ID.
-        execution_id:   Active SOP execution ID (None if no active execution).
-        sop_id:         Active SOP definition ID (None if no active execution).
-        current_state:  Current FSM state label (None if no active execution).
+        tenant_id:        Owning tenant.
+        session_id:       Current WebSocket / HTTP session ID.
+        execution_id:     Active workflow execution ID (None if no active execution).
+        workflow_id:      Active workflow definition ID (None if no active execution).
+        current_state:    Current FSM state label (None if no active execution).
         execution_status: ``running`` | ``waiting_human`` | ``completed`` | ``failed``.
-        skill_outputs:  Accumulated step outputs keyed by state_id.
-        user_context:   Merged dict of initial_inputs + all skill_outputs.
-        metadata:       Arbitrary extra data (locale, caller_id, etc.).
-        locale:         ISO 639-1 locale code (default ``"vi"``).
+        skill_outputs:    Accumulated step outputs keyed by state_id.
+        user_context:     Merged dict of initial_inputs + all skill_outputs.
+        metadata:         Arbitrary extra data (locale, caller_id, etc.).
+        locale:           ISO 639-1 locale code (default ``"vi"``).
     """
 
     tenant_id: str
     session_id: str = ""
     execution_id: str | None = None
-    sop_id: str | None = None
+    workflow_id: str | None = None
     current_state: str | None = None
     execution_status: str = "idle"
     skill_outputs: dict[str, Any] = field(default_factory=dict)

@@ -41,7 +41,7 @@ def rich_ctx() -> AgentContext:
         tenant_id="acme",
         session_id="sess-abc",
         execution_id="exec-001",
-        sop_id="refund_flow",
+        workflow_id="refund_flow",
         current_state="verify_customer",
         execution_status="running",
         skill_outputs={"verify_customer": {"customer_id": "C001"}},

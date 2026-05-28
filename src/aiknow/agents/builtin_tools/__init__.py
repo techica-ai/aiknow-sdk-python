@@ -14,11 +14,11 @@ Built-in tools (13 tools, 4 categories):
         kb_get_document        — Get full document content
 
     Platform tools:
-        get_execution_status   — Get SOP execution status
+        get_execution_status   — Get workflow execution status
         list_executions        — List recent executions
         advance_execution      — Advance waiting_human execution
         escalate_to_supervisor — Escalate case to supervisor
-        get_sop_definition     — Get SOP state machine definition
+        get_workflow_definition — Get workflow state machine definition
 
     Memory tools:
         get_session_info       — Get session metadata

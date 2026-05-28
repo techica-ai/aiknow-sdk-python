@@ -17,12 +17,12 @@ Usage::
 
     with builder.span("intent.detect") as s:
         result = detect_intent(text)
-        s.set("intent.sop_id", result.sop_id)
+        s.set("intent.workflow_id", result.workflow_id)
         s.set("intent.confidence", result.confidence)
         s.set("input.text_preview", text[:200])
 
-    with builder.span("sop.trigger") as s:
-        s.set("sop_id", sop_id)
+    with builder.span("workflow.trigger") as s:
+        s.set("workflow_id", workflow_id)
         execution = await trigger(...)
         s.set("execution_id", execution.execution_id)
 
@@ -169,7 +169,7 @@ class SpanBuilder:
 
             with builder.span("intent.detect") as s:
                 result = detect(text)
-                s.set("intent.sop_id", result.sop_id)
+                s.set("intent.workflow_id", result.workflow_id)
 
         On exception the span is marked ``error`` and the exception re-raised.
         """

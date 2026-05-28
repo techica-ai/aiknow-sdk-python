@@ -83,7 +83,7 @@ class BaseAgentExecutor(ABC):
             tenant_id=state.get("tenant_id", ""),
             session_id=state.get("session_id", ""),
             execution_id=state.get("execution_id") or state.get("activeExecutionId"),
-            sop_id=state.get("sop_id") or state.get("sopId"),
+            workflow_id=state.get("workflow_id"),
             current_state=state.get("current_state") or state.get("currentSopState"),
             execution_status=state.get("execution_status") or state.get("executionStatus", "idle"),
             skill_outputs=state.get("skill_outputs", {}),

@@ -1,5 +1,5 @@
 """Platform tools: get_execution_status, list_executions, advance_execution,
-escalate_to_supervisor, get_sop_definition."""
+escalate_to_supervisor, get_workflow_definition."""
 from __future__ import annotations
 
 import json
@@ -12,12 +12,12 @@ if TYPE_CHECKING:
 
 
 class GetExecutionStatusTool(BuiltinTool):
-    """Get current status and state of a SOP workflow execution."""
+    """Get current status and state of a workflow execution."""
 
     name = "get_execution_status"
     description = {
-        "vi": "Lấy trạng thái hiện tại của luồng SOP đang thực thi",
-        "en": "Get current status of an active SOP workflow execution",
+        "vi": "Lấy trạng thái hiện tại của luồng workflow đang thực thi",
+        "en": "Get current status of an active workflow execution",
     }
     parameters = [
         ToolParam(
@@ -39,7 +39,7 @@ class GetExecutionStatusTool(BuiltinTool):
         if agent_ctx.execution_id == exec_id:
             return json.dumps({
                 "execution_id": exec_id,
-                "sop_id": agent_ctx.sop_id,
+                "workflow_id": agent_ctx.workflow_id,
                 "current_state": agent_ctx.current_state,
                 "status": agent_ctx.execution_status,
                 "skill_outputs": agent_ctx.skill_outputs,
@@ -64,12 +64,12 @@ class GetExecutionStatusTool(BuiltinTool):
 
 
 class ListExecutionsTool(BuiltinTool):
-    """List recent SOP executions for the current tenant."""
+    """List recent workflow executions for the current tenant."""
 
     name = "list_executions"
     description = {
-        "vi": "Liệt kê các luồng SOP đã và đang thực thi",
-        "en": "List recent SOP workflow executions for this tenant",
+        "vi": "Liệt kê các luồng workflow đã và đang thực thi",
+        "en": "List recent workflow executions for this tenant",
     }
     parameters = [
         ToolParam(
@@ -123,10 +123,10 @@ class ListExecutionsTool(BuiltinTool):
             lines = [f"**Danh sách executions** (tổng: {len(items)}):\n"]
             for item in items:
                 exec_id = item.get("execution_id", "?")
-                sop_id = item.get("workflow_id", "?")
+                workflow_id = item.get("workflow_id", "?")
                 item_status = item.get("status", "?")
                 state = item.get("current_state", "?")
-                lines.append(f"- `{exec_id}` — {sop_id} | {item_status} | state: {state}")
+                lines.append(f"- `{exec_id}` — {workflow_id} | {item_status} | state: {state}")
 
             return "\n".join(lines)
 
@@ -135,12 +135,12 @@ class ListExecutionsTool(BuiltinTool):
 
 
 class AdvanceExecutionTool(BuiltinTool):
-    """Advance a waiting_human SOP execution with a signal/outcome."""
+    """Advance a waiting_human workflow execution with a signal/outcome."""
 
     name = "advance_execution"
     description = {
-        "vi": "Tiếp tục luồng SOP đang chờ xác nhận từ người dùng",
-        "en": "Advance a waiting SOP execution with an approval signal",
+        "vi": "Tiếp tục luồng workflow đang chờ xác nhận từ người dùng",
+        "en": "Advance a waiting workflow execution with an approval signal",
     }
     parameters = [
         ToolParam(
@@ -162,7 +162,7 @@ class AdvanceExecutionTool(BuiltinTool):
         signal: str = kwargs.get("signal", "")
 
         if not exec_id:
-            return "Không có luồng SOP nào đang chờ."
+            return "Không có luồng workflow nào đang chờ."
         if not signal:
             return "[advance_execution] Missing required parameter: signal"
 
@@ -271,31 +271,31 @@ class EscalateToSupervisorTool(BuiltinTool):
             return f"[escalate_to_supervisor] Error: {exc}"
 
 
-class GetSopDefinitionTool(BuiltinTool):
-    """Get the definition and transitions of a SOP workflow."""
+class GetWorkflowDefinitionTool(BuiltinTool):
+    """Get the definition and transitions of a workflow."""
 
-    name = "get_sop_definition"
+    name = "get_workflow_definition"
     description = {
-        "vi": "Lấy định nghĩa và các bước chuyển trạng thái của một SOP",
-        "en": "Get the definition and state transitions of a SOP workflow",
+        "vi": "Lấy định nghĩa và các bước chuyển trạng thái của một workflow",
+        "en": "Get the definition and state transitions of a workflow",
     }
     parameters = [
         ToolParam(
-            name="sop_id",
+            name="workflow_id",
             type="string",
-            description={"en": "SOP ID to retrieve (uses active SOP if omitted)"},
+            description={"en": "Workflow ID to retrieve (uses active workflow if omitted)"},
             required=False,
         ),
     ]
 
     async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
-        sop_id = kwargs.get("sop_id") or ctx.agent_ctx.sop_id
+        workflow_id = kwargs.get("workflow_id") or ctx.agent_ctx.workflow_id
 
-        if not sop_id:
-            return "Không có SOP nào đang hoạt động."
+        if not workflow_id:
+            return "Không có workflow nào đang hoạt động."
 
         if ctx.http_client is None:
-            return f"[get_sop_definition] HTTP client not configured for SOP: {sop_id}"
+            return f"[get_workflow_definition] HTTP client not configured for workflow: {workflow_id}"
 
         try:
             headers: dict[str, str] = {}
@@ -303,14 +303,14 @@ class GetSopDefinitionTool(BuiltinTool):
                 headers["Authorization"] = f"Bearer {ctx.api_key}"
 
             response = await ctx.http_client.get(
-                f"{ctx.platform_url}/api/v1/sops/{sop_id}",
+                f"{ctx.platform_url}/api/v1/workflow/definitions/{workflow_id}",
                 headers=headers,
                 timeout=10.0,
             )
             response.raise_for_status()
             data = response.json()
             nodes = data.get("nodes", {})
-            lines = [f"**SOP: {sop_id}** (version: {data.get('version', '?')})\n"]
+            lines = [f"**Workflow: {workflow_id}** (version: {data.get('version', '?')})\n"]
             for state_id, node in nodes.items():
                 transitions = node.get("transitions", [])
                 trans_str = ", ".join(
@@ -321,4 +321,4 @@ class GetSopDefinitionTool(BuiltinTool):
             return "\n".join(lines)
 
         except Exception as exc:  # noqa: BLE001
-            return f"[get_sop_definition] Error: {exc}"
+            return f"[get_workflow_definition] Error: {exc}"

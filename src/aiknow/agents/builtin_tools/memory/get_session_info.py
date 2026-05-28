@@ -28,7 +28,7 @@ class GetSessionInfoTool(BuiltinTool):
             "tenant_id": agent_ctx.tenant_id,
             "locale": agent_ctx.locale,
             "execution_id": agent_ctx.execution_id,
-            "sop_id": agent_ctx.sop_id,
+            "workflow_id": agent_ctx.workflow_id,
             "execution_status": agent_ctx.execution_status,
             **agent_ctx.metadata,
         }

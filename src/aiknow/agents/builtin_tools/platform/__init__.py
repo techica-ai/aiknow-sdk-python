@@ -1,13 +1,13 @@
-﻿"""Platform tools re-exports."""
+"""Platform tools re-exports."""
 from aiknow.agents.builtin_tools.platform.get_execution_status import (
     GetExecutionStatusTool,
     ListExecutionsTool,
     AdvanceExecutionTool,
     EscalateToSupervisorTool,
-    GetSopDefinitionTool,
+    GetWorkflowDefinitionTool,
 )
 
 __all__ = [
     "GetExecutionStatusTool", "ListExecutionsTool", "AdvanceExecutionTool",
-    "EscalateToSupervisorTool", "GetSopDefinitionTool",
+    "EscalateToSupervisorTool", "GetWorkflowDefinitionTool",
 ]

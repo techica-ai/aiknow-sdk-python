@@ -84,7 +84,7 @@ class BuiltinToolBox:
             "list_executions",
             "advance_execution",
             "escalate_to_supervisor",
-            "get_sop_definition",
+            "get_workflow_definition",
             # Memory tools
             "get_session_info",
             "get_conversation_history",
@@ -186,7 +186,7 @@ class BuiltinToolBox:
             "list_executions":        "aiknow.agents.builtin_tools.platform.list_executions",
             "advance_execution":      "aiknow.agents.builtin_tools.platform.advance_execution",
             "escalate_to_supervisor": "aiknow.agents.builtin_tools.platform.escalate_to_supervisor",
-            "get_sop_definition":     "aiknow.agents.builtin_tools.platform.get_sop_definition",
+            "get_workflow_definition": "aiknow.agents.builtin_tools.platform.get_execution_status",
             # Memory
             "get_session_info":       "aiknow.agents.builtin_tools.memory.get_session_info",
             "get_conversation_history": "aiknow.agents.builtin_tools.memory.get_conversation_history",

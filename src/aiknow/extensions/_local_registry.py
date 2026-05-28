@@ -2,8 +2,8 @@
 Local Extension Registry — collects registered extensions within the current process.
 
 This is the client-side registry. Before an AiknowApp starts, it collects
-all @step/@sop/@hook/@tool/@*_agent registrations here. On app.start(), the
-registry contents are serialised and uploaded to the Platform.
+all @step/@sop/@dialog/@hook/@tool/@*_agent registrations here. On app.start(),
+the registry contents are serialised and uploaded to the Platform.
 
 Design:
 - Module-level singleton (_default_registry) used by decorators
@@ -12,18 +12,19 @@ Design:
 
 Terminology:
 - "step"  : SOP workflow step (replaces deprecated "skill" in SOP context)
-- "sop"   : SOP finite-state-machine definition
+- "sop"   : SOP finite-state-machine declaration (@sop)
+- "dialog": Slot-filling dialog declaration (@dialog)
 - "hook"  : lifecycle event handler
 - "parser": custom document parser
-- "tool"  : agent tool (new — callable by LLM agents)
-- "agent" : AI agent declaration (new — @copilot_agent, @rag_agent, etc.)
+- "tool"  : agent tool (callable by LLM agents)
+- "agent" : AI agent declaration (@copilot_agent, @rag_agent, etc.)
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-ExtType = Literal["skill", "step", "sop", "hook", "parser", "tool", "agent"]
+ExtType = Literal["skill", "step", "sop", "dialog", "hook", "parser", "tool", "agent"]
 
 
 @dataclass
@@ -97,6 +98,7 @@ class LocalExtensionRegistry:
         result: dict[str, list[dict]] = {
             "steps": [],
             "sops": [],
+            "dialogs": [],
             "hooks": [],
             "parsers": [],
             "tools": [],

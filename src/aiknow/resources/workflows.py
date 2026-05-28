@@ -2,7 +2,7 @@
 AsyncWorkflowsResource — SDK resource for managing workflow executions.
 
 Wraps the Platform's /api/v1/workflow/* endpoints so App developers
-can start, monitor, advance, and list SOP executions without writing
+can start, monitor, advance, and list workflow executions without writing
 raw HTTP calls.
 
 Usage::
@@ -10,7 +10,7 @@ Usage::
     async with AsyncAIKnowClient(api_key="...") as client:
         # Start a refund flow
         exec_ = await client.workflows.start_execution(
-            sop_id="refund_flow",
+            workflow_id="refund_flow",
             session_id="sess-abc",
             initial_inputs={"phone": "0912345678", "order_id": "ORD-001"},
         )
@@ -78,7 +78,7 @@ class ExecutionState:
     def __repr__(self) -> str:
         return (
             f"ExecutionState(id={self.execution_id!r}, "
-            f"sop={self.workflow_id!r}, "
+            f"workflow={self.workflow_id!r}, "
             f"status={self.status!r}, "
             f"state={self.current_state!r})"
         )
@@ -95,7 +95,7 @@ class ExecutionState:
 
 
 class AsyncWorkflowsResource:
-    """Async HTTP resource for managing SOP workflow executions.
+    """Async HTTP resource for managing workflow executions.
 
     Args:
         client: Shared httpx.AsyncClient (injected by AsyncAIKnowClient).
@@ -106,18 +106,18 @@ class AsyncWorkflowsResource:
 
     async def start_execution(
         self,
-        sop_id: str,
+        workflow_id: str,
         initial_inputs: dict[str, Any] | None = None,
         session_id: str | None = None,
         traceparent: str | None = None,
     ) -> ExecutionState:
         """Start a new workflow execution.
 
-        Loads the SOP definition from Platform, compiles it into a state
+        Loads the workflow definition from Platform, compiles it into a state
         machine, and runs until completion or a human-wait state.
 
         Args:
-            sop_id:         ID of the SOP to execute (must be registered).
+            workflow_id:    ID of the workflow to execute (must be registered).
             initial_inputs: Seed data forwarded to the first skill node.
                             Example: {"phone": "0912345678", "order_id": "ORD-001"}.
                             Available in each skill via AppSkillDeps.user_context.
@@ -127,14 +127,14 @@ class AsyncWorkflowsResource:
                             of the caller's conversation trace in the dashboard.
 
         Returns:
-            ExecutionState snapshot. May already be completed for simple SOPs
+            ExecutionState snapshot. May already be completed for simple workflows
             that have no human-wait states.
 
         Raises:
-            AIKnowAPIError:        404 if SOP not found; 422 on bad input.
+            AIKnowAPIError:        404 if workflow not found; 422 on bad input.
             AIKnowConnectionError: Network-level failure.
         """
-        payload: dict[str, Any] = {"sop_id": sop_id}
+        payload: dict[str, Any] = {"workflow_id": workflow_id}
         if initial_inputs:
             payload["initial_inputs"] = initial_inputs
         if session_id:
@@ -157,7 +157,7 @@ class AsyncWorkflowsResource:
 
         state = ExecutionState(response.json())
         logger.info(
-            "Execution started: id=%s sop=%s status=%s",
+            "Execution started: id=%s workflow=%s status=%s",
             state.execution_id, state.workflow_id, state.status,
         )
         return state
@@ -229,7 +229,7 @@ class AsyncWorkflowsResource:
     async def list_executions(
         self,
         status: WorkflowStatus | None = None,
-        sop_id: str | None = None,
+        workflow_id: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> list[ExecutionState]:
@@ -239,10 +239,10 @@ class AsyncWorkflowsResource:
             pending = await client.workflows.list_executions(status="waiting_human")
 
         Args:
-            status:    Filter by execution status. None = all statuses.
-            sop_id:    Filter by SOP definition ID. None = all SOPs.
-            page:      Page number (1-indexed).
-            page_size: Results per page (max 100).
+            status:      Filter by execution status. None = all statuses.
+            workflow_id: Filter by workflow definition ID. None = all workflows.
+            page:        Page number (1-indexed).
+            page_size:   Results per page (max 100).
 
         Returns:
             List of ExecutionState snapshots, most recent first.
@@ -250,8 +250,8 @@ class AsyncWorkflowsResource:
         params: dict[str, Any] = {"page": page, "page_size": page_size}
         if status:
             params["status"] = status
-        if sop_id:
-            params["sop_id"] = sop_id
+        if workflow_id:
+            params["workflow_id"] = workflow_id
 
         try:
             response = await self._client.get("/workflow/executions", params=params)
