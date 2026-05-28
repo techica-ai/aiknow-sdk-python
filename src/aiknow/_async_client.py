@@ -9,6 +9,7 @@ from typing import Self
 import httpx
 
 from .resources.chat import AsyncChatResource
+from .resources.conversation import AsyncConversationResource
 from .resources.extensions import AsyncExtensionsResource
 from .resources.ingestion import AsyncIngestionResource
 from .resources.knowledge import AsyncKnowledgeResource, KnowledgeChunk as KnowledgeChunk  # re-export
@@ -73,6 +74,7 @@ class AsyncAIKnowClient:
             self._client.headers["X-Tenant-Id"] = tenant_id
 
         self.chat = AsyncChatResource(self._client)
+        self.conversation = AsyncConversationResource(self._client)
         self.ingestion = AsyncIngestionResource(self._client)
         self.extensions = AsyncExtensionsResource(self._client)
         self.workflows = AsyncWorkflowsResource(self._client)

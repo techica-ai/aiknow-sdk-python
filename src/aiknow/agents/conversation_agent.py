@@ -83,6 +83,13 @@ class AIKnowConversationAgent:
     tenant_id: str = ""
     channel: str = "web"
     timeout: float = 30.0
+    workflow_types: list[str] = []
+    """Workflow type filter for IntentRouter.
+    If non-empty, only workflows of the listed types are considered by the Platform.
+    Set to ["sop"] for Agent Desktop agents (SOP-only routing).
+    Set to ["dialog"] for conversational assistant agents (Dialog-only routing).
+    Default empty list means no filter — all workflow types are considered.
+    """
 
     def __init__(
         self,
@@ -91,6 +98,7 @@ class AIKnowConversationAgent:
         tenant_id: str | None = None,
         timeout: float | None = None,
         channel: str | None = None,
+        workflow_types: list[str] | None = None,
     ) -> None:
         if name is not None:
             self.name = name
@@ -102,6 +110,8 @@ class AIKnowConversationAgent:
             self.timeout = timeout
         if channel is not None:
             self.channel = channel
+        if workflow_types is not None:
+            self.workflow_types = workflow_types
 
         # Resolve from env vars if still unset
         if not self.platform_url:
@@ -214,40 +224,31 @@ class AIKnowConversationAgent:
         locale: str = "vi",
         caller_id: str | None = None,
     ) -> dict:
-        """POST to Platform /api/v1/conversation.
+        """POST to Platform /api/v1/conversation via AsyncAIKnowClient.
 
         Args:
-            session_id: Stable session identifier (= CopilotKit threadId).
-            message:    User's message text.
-            locale:     BCP-47 locale.
-            caller_id:  Optional caller identification.
+            session_id:    Stable session identifier (= CopilotKit threadId).
+            message:       User's message text.
+            locale:        BCP-47 locale.
+            caller_id:     Optional caller identification.
 
         Returns:
             Parsed ConversationTurn dict from Platform.
-
-        Raises:
-            httpx.HTTPStatusError: If Platform returns 4xx/5xx.
-            httpx.ConnectError:    If Platform is unreachable.
         """
-        url = f"{self.platform_url.rstrip('/')}/api/v1/conversation"
-        payload = {
-            "session_id": session_id,
-            "message": message,
-            "channel": self.channel,
-            "locale": locale,
-        }
-        if caller_id:
-            payload["caller_id"] = caller_id
-
-        headers = {
-            "Content-Type": "application/json",
-            "X-Tenant-Id": self.tenant_id,
-        }
-
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(url, json=payload, headers=headers)
-            response.raise_for_status()
-            return response.json()
+        from aiknow import AsyncAIKnowClient
+        async with AsyncAIKnowClient(
+            base_url=self.platform_url,
+            tenant_id=self.tenant_id,
+            timeout=self.timeout,
+        ) as client:
+            return await client.conversation.converse(
+                session_id=session_id,
+                message=message,
+                channel=self.channel,
+                caller_id=caller_id,
+                locale=locale,
+                workflow_types=self.workflow_types,
+            )
 
     # ------------------------------------------------------------------
     # State building

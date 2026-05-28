@@ -10,6 +10,7 @@ import httpx
 
 from ._exceptions import AIKnowConnectionError, AIKnowTimeoutError
 from .resources.chat import ChatResource
+from .resources.conversation import ConversationResource
 from .resources.ingestion import IngestionResource
 from .resources.observe import ObserveResource
 
@@ -70,6 +71,7 @@ class AIKnowClient:
             self._client.headers["X-Tenant-Id"] = tenant_id
 
         self.chat = ChatResource(self._client)
+        self.conversation = ConversationResource(self._client)
         self.ingestion = IngestionResource(self._client)
         self.observe: ObserveResource | None = (
             ObserveResource(self._client, resolved_admin_key)
