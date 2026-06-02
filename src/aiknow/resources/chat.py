@@ -221,6 +221,7 @@ def _parse_stream_event(event: dict) -> StreamEvent:
                 answer=event.get("answer", ""),
                 citations=event.get("citations", []),
                 trace_id=event.get("trace_id"),
+                graph=event.get("graph"),
             )
         case "error":
             return StreamErrorEvent(message=event.get("message", "Unknown error"))
