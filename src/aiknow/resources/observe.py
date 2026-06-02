@@ -269,6 +269,21 @@ class ObserveResource:
         raise_for_status("Observe.get_source", res)
         return SourceDetailResponse.model_validate(res.json())
 
+    def delete_source(self, source_id: str) -> dict[str, Any]:
+        """Delete a single source document, associated vectors and files."""
+        res = self._delete(f"{_BASE}/sources/{source_id}", {})
+        raise_for_status("Observe.delete_source", res)
+        return res.json()
+
+    def reset_tenant_data(self, tenant_id: str) -> dict[str, Any]:
+        """Reset all demo data for a tenant (sources, vectors, files, graph nodes, sessions)."""
+        try:
+            res = self._client.post(f"{_BASE}/reset", params={"tenant_id": tenant_id}, headers=self._headers)
+        except Exception as exc:
+            wrap_httpx_errors(f"POST {_BASE}/reset", exc)
+        raise_for_status("Observe.reset_tenant_data", res)
+        return res.json()
+
     # ------------------------------------------------------------------
     # Vector DB (Qdrant)
     # ------------------------------------------------------------------
@@ -587,6 +602,21 @@ class AsyncObserveResource:
         res = await self._get(f"{_BASE}/sources/{source_id}", {})
         raise_for_status("Observe.get_source", res)
         return SourceDetailResponse.model_validate(res.json())
+
+    async def delete_source(self, source_id: str) -> dict[str, Any]:
+        """Delete a single source document, associated vectors and files."""
+        res = await self._delete(f"{_BASE}/sources/{source_id}", {})
+        raise_for_status("Observe.delete_source", res)
+        return res.json()
+
+    async def reset_tenant_data(self, tenant_id: str) -> dict[str, Any]:
+        """Reset all demo data for a tenant (sources, vectors, files, graph nodes, sessions)."""
+        try:
+            res = await self._client.post(f"{_BASE}/reset", params={"tenant_id": tenant_id}, headers=self._headers)
+        except Exception as exc:
+            wrap_httpx_errors(f"POST {_BASE}/reset", exc)
+        raise_for_status("Observe.reset_tenant_data", res)
+        return res.json()
 
     # ------------------------------------------------------------------
     # Vector DB (Qdrant)
