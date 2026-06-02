@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator, Iterator
+from typing import Any
 
 import httpx
 from aiknow_contracts.chat import (
@@ -32,6 +33,7 @@ class ChatResource:
         tenant_id: str,
         session_id: str | None = None,
         source_ids: list[str] | None = None,
+        user_context: dict[str, Any] | None = None,
     ) -> ChatResponse:
         """Send a question to the AIKNOW Agent (sync)."""
         payload = ChatRequest(
@@ -39,6 +41,7 @@ class ChatResource:
             tenant_id=tenant_id,
             session_id=session_id,
             source_ids=source_ids,
+            user_context=user_context or {},
         )
         try:
             res = self._client.post("/chat/ask", json=payload.model_dump(exclude_none=True))
@@ -53,6 +56,7 @@ class ChatResource:
         tenant_id: str,
         session_id: str | None = None,
         source_ids: list[str] | None = None,
+        user_context: dict[str, Any] | None = None,
     ) -> Iterator[StreamEvent]:
         """Send a question to the AIKNOW Agent with SSE streaming (sync)."""
         payload = ChatRequest(
@@ -60,6 +64,7 @@ class ChatResource:
             tenant_id=tenant_id,
             session_id=session_id,
             source_ids=source_ids,
+            user_context=user_context or {},
         )
         with self._client.stream(
             "POST",
@@ -107,6 +112,7 @@ class AsyncChatResource:
         tenant_id: str,
         session_id: str | None = None,
         source_ids: list[str] | None = None,
+        user_context: dict[str, Any] | None = None,
     ) -> ChatResponse:
         """Send a question to the AIKNOW Agent (async)."""
         payload = ChatRequest(
@@ -114,6 +120,7 @@ class AsyncChatResource:
             tenant_id=tenant_id,
             session_id=session_id,
             source_ids=source_ids,
+            user_context=user_context or {},
         )
         try:
             res = await self._client.post("/chat/ask", json=payload.model_dump(exclude_none=True))
@@ -128,6 +135,7 @@ class AsyncChatResource:
         tenant_id: str,
         session_id: str | None = None,
         source_ids: list[str] | None = None,
+        user_context: dict[str, Any] | None = None,
     ) -> AsyncIterator[StreamEvent]:
         """Send a question to the AIKNOW Agent with SSE streaming (async)."""
         payload = ChatRequest(
@@ -135,6 +143,7 @@ class AsyncChatResource:
             tenant_id=tenant_id,
             session_id=session_id,
             source_ids=source_ids,
+            user_context=user_context or {},
         )
         async with self._client.stream(
             "POST",
