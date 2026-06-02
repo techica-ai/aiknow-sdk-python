@@ -31,12 +31,14 @@ class ChatResource:
         query: str,
         tenant_id: str,
         session_id: str | None = None,
+        source_ids: list[str] | None = None,
     ) -> ChatResponse:
         """Send a question to the AIKNOW Agent (sync)."""
         payload = ChatRequest(
             query=query,
             tenant_id=tenant_id,
             session_id=session_id,
+            source_ids=source_ids,
         )
         try:
             res = self._client.post("/chat/ask", json=payload.model_dump(exclude_none=True))
@@ -50,12 +52,14 @@ class ChatResource:
         query: str,
         tenant_id: str,
         session_id: str | None = None,
+        source_ids: list[str] | None = None,
     ) -> Iterator[StreamEvent]:
         """Send a question to the AIKNOW Agent with SSE streaming (sync)."""
         payload = ChatRequest(
             query=query,
             tenant_id=tenant_id,
             session_id=session_id,
+            source_ids=source_ids,
         )
         with self._client.stream(
             "POST",
@@ -102,12 +106,14 @@ class AsyncChatResource:
         query: str,
         tenant_id: str,
         session_id: str | None = None,
+        source_ids: list[str] | None = None,
     ) -> ChatResponse:
         """Send a question to the AIKNOW Agent (async)."""
         payload = ChatRequest(
             query=query,
             tenant_id=tenant_id,
             session_id=session_id,
+            source_ids=source_ids,
         )
         try:
             res = await self._client.post("/chat/ask", json=payload.model_dump(exclude_none=True))
@@ -121,12 +127,14 @@ class AsyncChatResource:
         query: str,
         tenant_id: str,
         session_id: str | None = None,
+        source_ids: list[str] | None = None,
     ) -> AsyncIterator[StreamEvent]:
         """Send a question to the AIKNOW Agent with SSE streaming (async)."""
         payload = ChatRequest(
             query=query,
             tenant_id=tenant_id,
             session_id=session_id,
+            source_ids=source_ids,
         )
         async with self._client.stream(
             "POST",
