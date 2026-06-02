@@ -99,6 +99,22 @@ class ChatResource:
         raise_for_status("Chat.get_history", res)
         return res.json().get("messages", [])
 
+    def delete_history(
+        self,
+        session_id: str,
+        tenant_id: str,
+    ) -> None:
+        """Xóa lịch sử chat của session trong Redis (sync)."""
+        try:
+            res = self._client.delete(
+                "/chat/history",
+                params={"session_id": session_id, "tenant_id": tenant_id},
+                timeout=httpx.Timeout(10.0),
+            )
+        except Exception as exc:
+            wrap_httpx_errors("Chat.delete_history", exc)
+        raise_for_status("Chat.delete_history", res)
+
 
 class AsyncChatResource:
     """Asynchronous chat resource."""
@@ -177,6 +193,22 @@ class AsyncChatResource:
             wrap_httpx_errors("Chat.get_history", exc)
         raise_for_status("Chat.get_history", res)
         return res.json().get("messages", [])
+
+    async def delete_history(
+        self,
+        session_id: str,
+        tenant_id: str,
+    ) -> None:
+        """Xóa lịch sử chat của session trong Redis (async)."""
+        try:
+            res = await self._client.delete(
+                "/chat/history",
+                params={"session_id": session_id, "tenant_id": tenant_id},
+                timeout=httpx.Timeout(10.0),
+            )
+        except Exception as exc:
+            wrap_httpx_errors("Chat.delete_history", exc)
+        raise_for_status("Chat.delete_history", res)
 
 
 def _parse_stream_event(event: dict) -> StreamEvent:
