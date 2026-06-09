@@ -13,6 +13,8 @@ from .resources.chat import ChatResource
 from .resources.conversation import ConversationResource
 from .resources.ingestion import IngestionResource
 from .resources.observe import ObserveResource
+from .resources.auth import AuthResource
+from ._auth_flow import AIKnowAuth
 
 _DEFAULT_BASE_URL = "http://localhost:8000/api/v1"
 
@@ -55,13 +57,21 @@ class AIKnowClient:
         resolved_api_key = api_key or os.environ.get("AIKNOW_API_KEY")
         resolved_admin_key = admin_key or os.environ.get("AIKNOW_ADMIN_KEY")
 
-        headers: dict[str, str] = {}
+        self.auth = AuthResource(self)
         if resolved_api_key:
-            headers["Authorization"] = f"Bearer {resolved_api_key}"
+            self.auth.access_token = resolved_api_key
+
+        self._auth_flow = AIKnowAuth(self.auth, auto_refresh=True)
+
+        self._raw_client = httpx.Client(
+            base_url=resolved_base,
+            timeout=httpx.Timeout(timeout),
+            transport=httpx.HTTPTransport(retries=3),
+        )
 
         self._client = httpx.Client(
             base_url=resolved_base,
-            headers=headers,
+            auth=self._auth_flow,
             timeout=httpx.Timeout(timeout),
             transport=httpx.HTTPTransport(retries=3),
         )
@@ -69,6 +79,7 @@ class AIKnowClient:
         # Set default X-Tenant-Id header if provided
         if tenant_id:
             self._client.headers["X-Tenant-Id"] = tenant_id
+            self._raw_client.headers["X-Tenant-Id"] = tenant_id
 
         self.chat = ChatResource(self._client)
         self.conversation = ConversationResource(self._client)
@@ -86,6 +97,7 @@ class AIKnowClient:
             tenant_id: Tenant identifier to send on every subsequent request.
         """
         self._client.headers["X-Tenant-Id"] = tenant_id
+        self._raw_client.headers["X-Tenant-Id"] = tenant_id
 
     def ping(self) -> bool:
         """Check connectivity to the AIKNOW API.
@@ -102,6 +114,7 @@ class AIKnowClient:
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""
         self._client.close()
+        self._raw_client.close()
 
     def __enter__(self) -> Self:
         return self

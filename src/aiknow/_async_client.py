@@ -15,6 +15,8 @@ from .resources.ingestion import AsyncIngestionResource
 from .resources.knowledge import AsyncKnowledgeResource, KnowledgeChunk as KnowledgeChunk  # re-export
 from .resources.observe import AsyncObserveResource
 from .resources.workflows import AsyncWorkflowsResource
+from .resources.auth import AsyncAuthResource
+from ._auth_flow import AIKnowAuth
 from ._span_builder import SpanBuilder as SpanBuilder  # re-export
 
 _DEFAULT_BASE_URL = "http://localhost:8000/api/v1"
@@ -58,13 +60,21 @@ class AsyncAIKnowClient:
         resolved_api_key = api_key or os.environ.get("AIKNOW_API_KEY")
         resolved_admin_key = admin_key or os.environ.get("AIKNOW_ADMIN_KEY")
 
-        headers: dict[str, str] = {}
+        self.auth = AsyncAuthResource(self)
         if resolved_api_key:
-            headers["Authorization"] = f"Bearer {resolved_api_key}"
+            self.auth.access_token = resolved_api_key
+
+        self._auth_flow = AIKnowAuth(self.auth, auto_refresh=True)
+
+        self._raw_client = httpx.AsyncClient(
+            base_url=resolved_base,
+            timeout=httpx.Timeout(timeout),
+            transport=httpx.AsyncHTTPTransport(retries=3),
+        )
 
         self._client = httpx.AsyncClient(
             base_url=resolved_base,
-            headers=headers,
+            auth=self._auth_flow,
             timeout=httpx.Timeout(timeout),
             transport=httpx.AsyncHTTPTransport(retries=3),
         )
@@ -72,6 +82,7 @@ class AsyncAIKnowClient:
         # Set default X-Tenant-Id header if provided
         if tenant_id:
             self._client.headers["X-Tenant-Id"] = tenant_id
+            self._raw_client.headers["X-Tenant-Id"] = tenant_id
 
         self.chat = AsyncChatResource(self._client)
         self.conversation = AsyncConversationResource(self._client)
@@ -95,6 +106,7 @@ class AsyncAIKnowClient:
             tenant_id: Tenant identifier to send on every subsequent request.
         """
         self._client.headers["X-Tenant-Id"] = tenant_id
+        self._raw_client.headers["X-Tenant-Id"] = tenant_id
 
     async def ping(self) -> bool:
         """Check connectivity to the AIKNOW API.
@@ -151,6 +163,7 @@ class AsyncAIKnowClient:
     async def close(self) -> None:
         """Close the underlying HTTP connection pool."""
         await self._client.aclose()
+        await self._raw_client.aclose()
 
     async def __aenter__(self) -> Self:
         return self
