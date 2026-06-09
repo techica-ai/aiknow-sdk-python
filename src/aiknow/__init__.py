@@ -67,7 +67,7 @@ from aiknow_contracts.vector import (
     VectorSearchResponse,
 )
 
-from ._async_client import AsyncAIKnowClient
+from ._async_client import AsyncAIKnowClient, close_shared_http_client
 from ._client import AIKnowClient
 from ._span_builder import SpanBuilder
 from ._exceptions import (
@@ -110,6 +110,7 @@ __all__ = [
     # Clients
     "AIKnowClient",
     "AsyncAIKnowClient",
+    "close_shared_http_client",
     # Exceptions
     "AIKnowAPIError",
     "AIKnowConnectionError",

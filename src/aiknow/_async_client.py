@@ -4,6 +4,7 @@ AIKNOW SDK — asynchronous client.
 from __future__ import annotations
 
 import os
+import threading as _threading
 from typing import Self
 
 import httpx
@@ -18,6 +19,63 @@ from .resources.workflows import AsyncWorkflowsResource
 from .resources.auth import AsyncAuthResource
 from ._auth_flow import AIKnowAuth
 from ._span_builder import SpanBuilder as SpanBuilder  # re-export
+
+# ---------------------------------------------------------------------------
+# Shared HTTP transport singleton
+# ---------------------------------------------------------------------------
+# Một httpx.AsyncClient duy nhất cho tất cả for_request() instances.
+# Tái dụng TCP connection pool → không establish kết nối mới mỗi request.
+#
+# threading.Lock (không asyncio.Lock) vì:
+#   - Được tạo ở module level, trước khi event loop start
+#   - Double-checked locking chỉ chạy trong _get_shared_http_client() (sync init)
+#   - Lock giữ < 1ms (chỉ trong block tạo client), không ảnh hưởng event loop
+_SHARED_HTTP_CLIENT: httpx.AsyncClient | None = None
+_SHARED_HTTP_LOCK = _threading.Lock()
+
+
+def _get_shared_http_client() -> httpx.AsyncClient:
+    """
+    Return (hoặc tạo) shared httpx.AsyncClient với connection pool.
+
+    base_url đọc từ AIKNOW_BASE_URL env var — không nhận argument để tránh
+    "bỏ qua base_url sau lần đầu" bug (singleton chỉ tạo một lần).
+
+    BFF chỉ có một upstream URL → singleton pattern là safe và đúng.
+    """
+    global _SHARED_HTTP_CLIENT
+    if _SHARED_HTTP_CLIENT is None:
+        with _SHARED_HTTP_LOCK:  # Double-checked locking
+            if _SHARED_HTTP_CLIENT is None:
+                base = (
+                    os.environ.get("AIKNOW_BASE_URL") or _DEFAULT_BASE_URL
+                ).rstrip("/")
+                _SHARED_HTTP_CLIENT = httpx.AsyncClient(
+                    base_url=base,
+                    timeout=httpx.Timeout(60.0),
+                    transport=httpx.AsyncHTTPTransport(
+                        retries=3,
+                        limits=httpx.Limits(
+                            max_connections=100,
+                            max_keepalive_connections=20,
+                            keepalive_expiry=30.0,
+                        ),
+                    ),
+                )
+    return _SHARED_HTTP_CLIENT
+
+
+async def close_shared_http_client() -> None:
+    """
+    Close shared httpx transport. Gọi trong app lifespan shutdown.
+
+    Sau khi gọi, for_request() sẽ tạo lại client mới khi được gọi tiếp.
+    Thường chỉ gọi một lần khi app tắt.
+    """
+    global _SHARED_HTTP_CLIENT
+    if _SHARED_HTTP_CLIENT is not None:
+        await _SHARED_HTTP_CLIENT.aclose()
+        _SHARED_HTTP_CLIENT = None
 
 _DEFAULT_BASE_URL = "http://localhost:8000/api/v1"
 
@@ -161,7 +219,16 @@ class AsyncAIKnowClient:
             return {"trace_id": trace.get("trace_id"), "spans_accepted": 0}
 
     async def close(self) -> None:
-        """Close the underlying HTTP connection pool."""
+        """
+        Close owned HTTP resources.
+
+        for_request() instances KHÔNG own resources (dùng shared transport) →
+        close() là no-op, detect bằng explicit `_is_per_request` flag.
+
+        Shared transport được close bởi close_shared_http_client() trong app lifespan.
+        """
+        if getattr(self, "_is_per_request", False):
+            return  # Shared resources — không owned, không close
         await self._client.aclose()
         await self._raw_client.aclose()
 
@@ -170,3 +237,61 @@ class AsyncAIKnowClient:
 
     async def __aexit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         await self.close()
+
+    # ---------------------------------------------------------------------------
+    # BFF / Proxy factory
+    # ---------------------------------------------------------------------------
+
+    @classmethod
+    def for_request(
+        cls,
+        bearer_token: str,
+        tenant_id: str,
+    ) -> "AsyncAIKnowClient":
+        """
+        Tạo lightweight client với per-request auth headers.
+
+        SYNC classmethod — KHÔNG dùng ``await``:
+
+            # ✅ Đúng:
+            client = AsyncAIKnowClient.for_request(token, tenant_id)
+
+            # ❌ Sai — TypeError at runtime:
+            client = await AsyncAIKnowClient.for_request(token, tenant_id)
+
+        KHÔNG tạo httpx.AsyncClient mới — dùng shared singleton với
+        ``_PerRequestClient`` wrapper (duck typing). Không cần close() hay
+        context manager.
+
+        base_url được đọc từ ``AIKNOW_BASE_URL`` env var (same as shared client).
+
+        Args:
+            bearer_token: JWT access token từ httpOnly cookie.
+            tenant_id:    Tenant UUID từ token introspection.
+
+        Returns:
+            AsyncAIKnowClient instance với resources được bind vào per-request client.
+        """
+        from ._per_request_client import _PerRequestClient
+
+        shared = _get_shared_http_client()
+        per_req = _PerRequestClient(shared, bearer_token, tenant_id)
+
+        instance = cls.__new__(cls)
+        instance._is_per_request = True   # Explicit flag — không suy luận từ _auth_flow
+
+        instance.chat = AsyncChatResource(per_req)              # type: ignore[arg-type]
+        instance.ingestion = AsyncIngestionResource(per_req)    # type: ignore[arg-type]
+        instance.conversation = AsyncConversationResource(per_req)  # type: ignore[arg-type]
+        instance.extensions = AsyncExtensionsResource(per_req)  # type: ignore[arg-type]
+        instance.workflows = AsyncWorkflowsResource(per_req)    # type: ignore[arg-type]
+        instance.knowledge = AsyncKnowledgeResource(            # type: ignore[arg-type]
+            per_req, tenant_id=tenant_id
+        )
+        instance.observe = None    # Admin key required — dùng get_admin_client() riêng
+        instance.auth = None
+        instance._auth_flow = None
+        instance._client = per_req      # type: ignore[assignment]
+        instance._raw_client = per_req  # type: ignore[assignment]
+
+        return instance
