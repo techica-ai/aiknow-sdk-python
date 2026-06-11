@@ -14,6 +14,7 @@ from .resources.conversation import ConversationResource
 from .resources.ingestion import IngestionResource
 from .resources.observe import ObserveResource
 from .resources.auth import AuthResource
+from .resources.users import UsersResource
 from ._auth_flow import AIKnowAuth
 
 _DEFAULT_BASE_URL = "http://localhost:8000/api/v1"
@@ -84,6 +85,7 @@ class AIKnowClient:
         self.chat = ChatResource(self._client)
         self.conversation = ConversationResource(self._client)
         self.ingestion = IngestionResource(self._client)
+        self.users = UsersResource(self._client)
         self.observe: ObserveResource | None = (
             ObserveResource(self._client, resolved_admin_key)
             if resolved_admin_key

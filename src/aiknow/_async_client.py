@@ -17,6 +17,7 @@ from .resources.knowledge import AsyncKnowledgeResource, KnowledgeChunk as Knowl
 from .resources.observe import AsyncObserveResource
 from .resources.workflows import AsyncWorkflowsResource
 from .resources.auth import AsyncAuthResource
+from .resources.users import AsyncUsersResource
 from ._auth_flow import AIKnowAuth
 from ._span_builder import SpanBuilder as SpanBuilder  # re-export
 
@@ -145,6 +146,7 @@ class AsyncAIKnowClient:
         self.chat = AsyncChatResource(self._client)
         self.conversation = AsyncConversationResource(self._client)
         self.ingestion = AsyncIngestionResource(self._client)
+        self.users = AsyncUsersResource(self._client)
         self.extensions = AsyncExtensionsResource(self._client)
         self.workflows = AsyncWorkflowsResource(self._client)
         self.knowledge = AsyncKnowledgeResource(
@@ -283,6 +285,7 @@ class AsyncAIKnowClient:
         instance.chat = AsyncChatResource(per_req)              # type: ignore[arg-type]
         instance.ingestion = AsyncIngestionResource(per_req)    # type: ignore[arg-type]
         instance.conversation = AsyncConversationResource(per_req)  # type: ignore[arg-type]
+        instance.users = AsyncUsersResource(per_req)            # type: ignore[arg-type]
         instance.extensions = AsyncExtensionsResource(per_req)  # type: ignore[arg-type]
         instance.workflows = AsyncWorkflowsResource(per_req)    # type: ignore[arg-type]
         instance.knowledge = AsyncKnowledgeResource(            # type: ignore[arg-type]
