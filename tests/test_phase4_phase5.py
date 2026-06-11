@@ -241,12 +241,17 @@ class TestAIKnowConversationAgentStreaming:
 
         # Mock httpx.AsyncClient.post
         class MockResponse:
+            is_success = True
+            status_code = 200
             def raise_for_status(self): pass
             def json(self): return platform_response
 
         class MockClient:
+            def __init__(self, *args, **kwargs):
+                self.headers = {}
             async def __aenter__(self): return self
             async def __aexit__(self, *_): pass
+            async def aclose(self): pass
             async def post(self, *args, **kwargs): return MockResponse()
 
         monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: MockClient())
@@ -329,6 +334,8 @@ class TestAIKnowConversationAgentStreaming:
         captured = {}
 
         class MockResponse:
+            is_success = True
+            status_code = 200
             def raise_for_status(self): pass
             def json(self): return {
                 "session_id": "stable-sess",
@@ -338,8 +345,11 @@ class TestAIKnowConversationAgentStreaming:
             }
 
         class MockClient:
+            def __init__(self, *args, **kwargs):
+                self.headers = {}
             async def __aenter__(self): return self
             async def __aexit__(self, *_): pass
+            async def aclose(self): pass
             async def post(self, url, json=None, **kwargs):
                 captured["payload"] = json
                 return MockResponse()
