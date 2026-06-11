@@ -1,6 +1,6 @@
 [project]
 name = "aiknow-sdk-python"
-version = "0.1.0"
+version = "0.2.0"
 description = "Public Python SDK for the AIKNOW platform."
 requires-python = ">=3.12"
 dependencies = [
