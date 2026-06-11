@@ -239,11 +239,12 @@ class ObserveResource:
         raise_for_status("Observe.list_jobs", res)
         return JobListResponse.model_validate(res.json())
 
-    def get_job(self, job_id: str) -> JobStatusResponse:
+    def get_job(self, job_id: str, tenant_id: str) -> JobStatusResponse:
         """Get full detail for a single job by ID."""
-        res = self._get(f"{_BASE}/jobs/{job_id}", {})
+        res = self._get(f"{_BASE}/jobs/{job_id}", {"tenant_id": tenant_id})
         raise_for_status("Observe.get_job", res)
         return JobStatusResponse.model_validate(res.json())
+
 
     # ------------------------------------------------------------------
     # Sources
@@ -263,17 +264,18 @@ class ObserveResource:
         raise_for_status("Observe.list_sources", res)
         return SourceListResponse.model_validate(res.json())
 
-    def get_source(self, source_id: str) -> SourceDetailResponse:
+    def get_source(self, source_id: str, tenant_id: str) -> SourceDetailResponse:
         """Get full detail for a single source document including linked jobs."""
-        res = self._get(f"{_BASE}/sources/{source_id}", {})
+        res = self._get(f"{_BASE}/sources/{source_id}", {"tenant_id": tenant_id})
         raise_for_status("Observe.get_source", res)
         return SourceDetailResponse.model_validate(res.json())
 
-    def delete_source(self, source_id: str) -> dict[str, Any]:
+    def delete_source(self, source_id: str, tenant_id: str) -> dict[str, Any]:
         """Delete a single source document, associated vectors and files."""
-        res = self._delete(f"{_BASE}/sources/{source_id}", {})
+        res = self._delete(f"{_BASE}/sources/{source_id}", {"tenant_id": tenant_id})
         raise_for_status("Observe.delete_source", res)
         return res.json()
+
 
     def reset_tenant_data(self, tenant_id: str) -> dict[str, Any]:
         """Reset all demo data for a tenant (sources, vectors, files, graph nodes, sessions)."""
@@ -573,11 +575,12 @@ class AsyncObserveResource:
         raise_for_status("Observe.list_jobs", res)
         return JobListResponse.model_validate(res.json())
 
-    async def get_job(self, job_id: str) -> JobStatusResponse:
+    async def get_job(self, job_id: str, tenant_id: str) -> JobStatusResponse:
         """Get full detail for a single job by ID."""
-        res = await self._get(f"{_BASE}/jobs/{job_id}", {})
+        res = await self._get(f"{_BASE}/jobs/{job_id}", {"tenant_id": tenant_id})
         raise_for_status("Observe.get_job", res)
         return JobStatusResponse.model_validate(res.json())
+
 
     # ------------------------------------------------------------------
     # Sources
@@ -597,17 +600,18 @@ class AsyncObserveResource:
         raise_for_status("Observe.list_sources", res)
         return SourceListResponse.model_validate(res.json())
 
-    async def get_source(self, source_id: str) -> SourceDetailResponse:
+    async def get_source(self, source_id: str, tenant_id: str) -> SourceDetailResponse:
         """Get full detail for a single source document including linked jobs."""
-        res = await self._get(f"{_BASE}/sources/{source_id}", {})
+        res = await self._get(f"{_BASE}/sources/{source_id}", {"tenant_id": tenant_id})
         raise_for_status("Observe.get_source", res)
         return SourceDetailResponse.model_validate(res.json())
 
-    async def delete_source(self, source_id: str) -> dict[str, Any]:
+    async def delete_source(self, source_id: str, tenant_id: str) -> dict[str, Any]:
         """Delete a single source document, associated vectors and files."""
-        res = await self._delete(f"{_BASE}/sources/{source_id}", {})
+        res = await self._delete(f"{_BASE}/sources/{source_id}", {"tenant_id": tenant_id})
         raise_for_status("Observe.delete_source", res)
         return res.json()
+
 
     async def reset_tenant_data(self, tenant_id: str) -> dict[str, Any]:
         """Reset all demo data for a tenant (sources, vectors, files, graph nodes, sessions)."""
