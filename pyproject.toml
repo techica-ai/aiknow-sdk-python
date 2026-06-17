@@ -26,11 +26,13 @@ packages = ["src/aiknow"]
 
 [tool.uv.sources]
 aiknow-contracts = { workspace = true }
+aiknow-core = { workspace = true }
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
     "pytest-asyncio>=1.3.0",
+    "aiknow-core",
 ]
 
 [[tool.uv.index]]
