@@ -242,6 +242,71 @@ class AsyncAIKnowClient:
     async def __aexit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         await self.close()
 
+    async def parse(
+        self,
+        source_id: str,
+        parser: str = "markitdown",
+        config: dict[str, Any] | None = None,
+        persist: bool = False,
+    ) -> dict[str, Any]:
+        """Parse an existing registered source document (async)."""
+        payload = {
+            "source_id": source_id,
+            "parser": parser,
+            "config": config,
+            "persist": persist,
+        }
+        res = await self._client.post("/pipeline/parse", json=payload)
+        res.raise_for_status()
+        return res.json()
+
+    async def chunk(
+        self,
+        state_token: str | None = None,
+        document: dict[str, Any] | None = None,
+        strategy: str = "recursive",
+        chunk_size: int | None = None,
+        overlap: int | None = None,
+        dialog_config: dict[str, Any] | None = None,
+        persist: bool = False,
+    ) -> dict[str, Any]:
+        """Chunk a parsed document (async)."""
+        payload = {
+            "state_token": state_token,
+            "document": document,
+            "strategy": strategy,
+            "chunk_size": chunk_size,
+            "overlap": overlap,
+            "dialog_config": dialog_config,
+            "persist": persist,
+        }
+        res = await self._client.post("/pipeline/chunk", json=payload)
+        res.raise_for_status()
+        return res.json()
+
+    async def get_state(self, state_token: str) -> Any:
+        """Fetch intermediate pipeline state from token and deserialize it (async)."""
+        res = await self._client.get(f"/pipeline/state/{state_token}")
+        res.raise_for_status()
+        payload = res.json()
+        data_type = payload["type"]
+        data = payload["data"]
+
+        # Deserialization logic
+        if data_type == "parsed_document":
+            from aiknow_core.common.models.knowledge import ParsedDocument
+            return ParsedDocument.model_validate(data)
+        elif data_type == "chunks":
+            from aiknow_core.common.models.knowledge import Chunk
+            return [Chunk.model_validate(c) for c in data]
+        return data
+
+    async def list_states(self) -> list[dict[str, Any]]:
+        """List all active and persistent states (async)."""
+        res = await self._client.get("/pipeline/states")
+        res.raise_for_status()
+        return res.json()
+
     # ---------------------------------------------------------------------------
     # BFF / Proxy factory
     # ---------------------------------------------------------------------------
