@@ -84,7 +84,7 @@ class LocalExtensionRegistry:
         This ensures ``SkillDispatcher`` can use a single ``get(name, "step")``
         call without worrying about which decorator the App author used.
         """
-        search_types = (ext_type,)
+        search_types: tuple[str, ...] = (ext_type,)
         if ext_type == "step":
             search_types = ("step", "skill")  # backward compat
         matches = [e for e in self._entries if e.name == name and e.ext_type in search_types]
@@ -93,9 +93,9 @@ class LocalExtensionRegistry:
     def all(self) -> list[ExtensionEntry]:
         return list(self._entries)
 
-    def describe(self) -> dict[str, list[dict]]:
+    def describe(self) -> dict[str, list[dict[str, Any]]]:
         """Return a dict suitable for debug display / manifest serialisation."""
-        result: dict[str, list[dict]] = {
+        result: dict[str, list[dict[str, Any]]] = {
             "steps": [],
             "sops": [],
             "dialogs": [],

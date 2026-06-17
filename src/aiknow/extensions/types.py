@@ -22,7 +22,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 # ---------------------------------------------------------------------------
 # Step dependencies (injected by Platform at invocation time)
 # ---------------------------------------------------------------------------
@@ -91,17 +90,16 @@ class StepResult(BaseModel):
     data: dict[str, Any] = Field(default_factory=dict)
     next_state: str | None = None
 
-    # Convenience constructors
     @classmethod
-    def ok(cls, message: str = "OK", data: dict | None = None) -> "StepResult":
+    def ok(cls, message: str = "OK", data: dict[str, Any] | None = None) -> StepResult:
         return cls(status="ok", message=message, data=data or {})
 
     @classmethod
-    def error(cls, message: str, data: dict | None = None) -> "StepResult":
+    def error(cls, message: str, data: dict[str, Any] | None = None) -> StepResult:
         return cls(status="error", message=message, data=data or {})
 
     @classmethod
-    def escalate(cls, message: str = "Escalating to human agent") -> "StepResult":
+    def escalate(cls, message: str = "Escalating to human agent") -> StepResult:
         return cls(status="escalate", message=message, next_state="escalate_human")
 
 

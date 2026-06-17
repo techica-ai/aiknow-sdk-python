@@ -23,7 +23,8 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 from aiknow.agents.executors.base import BaseAgentExecutor
 
@@ -49,7 +50,7 @@ class CopilotAgentExecutor(BaseAgentExecutor):
         from starlette.responses import StreamingResponse
 
         ctx = self._extract_context(body)
-        messages: list[dict] = body.get("messages", [])
+        messages: list[dict[str, Any]] = body.get("messages", [])
         run_id: str = body.get("runId", str(uuid.uuid4()))
 
         return StreamingResponse(
@@ -64,7 +65,7 @@ class CopilotAgentExecutor(BaseAgentExecutor):
     async def _stream_agui(
         self,
         run_id: str,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         ctx: Any,
         body: dict[str, Any],
     ) -> AsyncIterator[str]:
@@ -91,7 +92,7 @@ class CopilotAgentExecutor(BaseAgentExecutor):
         yield self._sse_event("RunStarted", {"runId": run_id, "threadId": thread_id})
 
         # ── 3. Build LLM messages ───────────────────────────────────────
-        llm_messages: list[dict] = []
+        llm_messages: list[dict[str, Any]] = []
         if system_prompt:
             llm_messages.append({"role": "system", "content": system_prompt})
 
@@ -110,7 +111,7 @@ class CopilotAgentExecutor(BaseAgentExecutor):
 
         for step in range(max_steps):
             text_chunks: list[str] = []
-            tool_calls_raw: list[dict] = []
+            tool_calls_raw: list[dict[str, Any]] = []
             is_first_chunk = True
 
             try:
@@ -154,7 +155,7 @@ class CopilotAgentExecutor(BaseAgentExecutor):
             if not tool_calls_raw:
                 break  # No tools → done
 
-            tool_results: list[dict] = []
+            tool_results: list[dict[str, Any]] = []
             for tc in tool_calls_raw:
                 tc_id = tc.get("id", str(uuid.uuid4()))
                 tc_name = tc.get("function", {}).get("name", "")
@@ -215,9 +216,9 @@ class CopilotAgentExecutor(BaseAgentExecutor):
 
     async def _llm_stream(
         self,
-        messages: list[dict],
-        tool_schemas: list[dict],
-    ) -> AsyncIterator[tuple[str, list[dict]]]:
+        messages: list[dict[str, Any]],
+        tool_schemas: list[dict[str, Any]],
+    ) -> AsyncIterator[tuple[str, list[dict[str, Any]]]]:
         """Stream from LiteLLM Gateway.
 
         Yields:
@@ -239,8 +240,7 @@ class CopilotAgentExecutor(BaseAgentExecutor):
             payload["tools"] = tool_schemas
             payload["tool_choice"] = "auto"
 
-        collected_tool_calls: dict[int, dict] = {}
-        finish_reason: str | None = None
+        collected_tool_calls: dict[int, dict[str, Any]] = {}
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             async with client.stream(
@@ -265,7 +265,6 @@ class CopilotAgentExecutor(BaseAgentExecutor):
 
                     choice = (chunk.get("choices") or [{}])[0]
                     delta = choice.get("delta", {})
-                    finish_reason = choice.get("finish_reason")
 
                     # Text content
                     content = delta.get("content")

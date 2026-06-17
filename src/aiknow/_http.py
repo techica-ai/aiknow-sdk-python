@@ -5,8 +5,9 @@ Centralizes error checking so individual resource methods stay DRY.
 """
 from __future__ import annotations
 
-import httpx
 from typing import NoReturn
+
+import httpx
 
 from ._exceptions import (
     AIKnowAPIError,

@@ -5,21 +5,22 @@ from __future__ import annotations
 
 import os
 import threading as _threading
-from typing import Self
+from typing import Any, Self, cast
 
 import httpx
 
+from ._auth_flow import AIKnowAuth
+from ._span_builder import SpanBuilder as SpanBuilder  # re-export
+from .resources.auth import AsyncAuthResource
 from .resources.chat import AsyncChatResource
 from .resources.conversation import AsyncConversationResource
 from .resources.extensions import AsyncExtensionsResource
 from .resources.ingestion import AsyncIngestionResource
-from .resources.knowledge import AsyncKnowledgeResource, KnowledgeChunk as KnowledgeChunk  # re-export
+from .resources.knowledge import AsyncKnowledgeResource  # re-export
+from .resources.knowledge import KnowledgeChunk as KnowledgeChunk
 from .resources.observe import AsyncObserveResource
-from .resources.workflows import AsyncWorkflowsResource
-from .resources.auth import AsyncAuthResource
 from .resources.users import AsyncUsersResource
-from ._auth_flow import AIKnowAuth
-from ._span_builder import SpanBuilder as SpanBuilder  # re-export
+from .resources.workflows import AsyncWorkflowsResource
 
 # ---------------------------------------------------------------------------
 # Shared HTTP transport singleton
@@ -68,10 +69,10 @@ def _get_shared_http_client() -> httpx.AsyncClient:
 
 async def close_shared_http_client() -> None:
     """
-    Close shared httpx transport. Gọi trong app lifespan shutdown.
+    Close shared httpx transport. Called during app lifespan shutdown.
 
-    Sau khi gọi, for_request() sẽ tạo lại client mới khi được gọi tiếp.
-    Thường chỉ gọi một lần khi app tắt.
+    After calling, for_request() will recreate a new client when called again.
+    Usually only called once when the app shuts down.
     """
     global _SHARED_HTTP_CLIENT
     if _SHARED_HTTP_CLIENT is not None:
@@ -131,6 +132,7 @@ class AsyncAIKnowClient:
             transport=httpx.AsyncHTTPTransport(retries=3),
         )
 
+        self._is_per_request = False
         self._client = httpx.AsyncClient(
             base_url=resolved_base,
             auth=self._auth_flow,
@@ -182,9 +184,9 @@ class AsyncAIKnowClient:
 
     async def push_trace(
         self,
-        trace: dict,
-        spans: list[dict],
-    ) -> dict:
+        trace: dict[str, Any],
+        spans: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Push a conversation trace and its spans to the Platform.
 
         Designed to be called after :class:`SpanBuilder.flush()`::
@@ -211,7 +213,7 @@ class AsyncAIKnowClient:
         try:
             res = await self._client.post("/observe/push", json=payload)
             res.raise_for_status()
-            return res.json()
+            return cast(dict[str, Any], res.json())
         except Exception as exc:
             # Fire-and-forget: log but never raise so callers aren't disrupted
             import logging
@@ -249,30 +251,30 @@ class AsyncAIKnowClient:
         cls,
         bearer_token: str,
         tenant_id: str,
-    ) -> "AsyncAIKnowClient":
+    ) -> AsyncAIKnowClient:
         """
-        Tạo lightweight client với per-request auth headers.
+        Create a lightweight client with per-request auth headers.
 
-        SYNC classmethod — KHÔNG dùng ``await``:
+        SYNC classmethod — Do NOT use ``await``:
 
-            # ✅ Đúng:
+            # ✅ Correct:
             client = AsyncAIKnowClient.for_request(token, tenant_id)
 
-            # ❌ Sai — TypeError at runtime:
+            # ❌ Incorrect — TypeError at runtime:
             client = await AsyncAIKnowClient.for_request(token, tenant_id)
 
-        KHÔNG tạo httpx.AsyncClient mới — dùng shared singleton với
-        ``_PerRequestClient`` wrapper (duck typing). Không cần close() hay
-        context manager.
+        Does NOT create a new httpx.AsyncClient — uses a shared singleton with
+        ``_PerRequestClient`` wrapper (duck typing). No need to close() or use
+        a context manager.
 
-        base_url được đọc từ ``AIKNOW_BASE_URL`` env var (same as shared client).
+        base_url is read from the ``AIKNOW_BASE_URL`` env var (same as shared client).
 
         Args:
-            bearer_token: JWT access token từ httpOnly cookie.
-            tenant_id:    Tenant UUID từ token introspection.
+            bearer_token: JWT access token from httpOnly cookie.
+            tenant_id:    Tenant UUID from token introspection.
 
         Returns:
-            AsyncAIKnowClient instance với resources được bind vào per-request client.
+            AsyncAIKnowClient instance with resources bound to the per-request client.
         """
         from ._per_request_client import _PerRequestClient
 
@@ -288,12 +290,12 @@ class AsyncAIKnowClient:
         instance.users = AsyncUsersResource(per_req)            # type: ignore[arg-type]
         instance.extensions = AsyncExtensionsResource(per_req)  # type: ignore[arg-type]
         instance.workflows = AsyncWorkflowsResource(per_req)    # type: ignore[arg-type]
-        instance.knowledge = AsyncKnowledgeResource(            # type: ignore[arg-type]
-            per_req, tenant_id=tenant_id
+        instance.knowledge = AsyncKnowledgeResource(
+            per_req, tenant_id=tenant_id  # type: ignore[arg-type]
         )
         instance.observe = None    # Admin key required — dùng get_admin_client() riêng
-        instance.auth = None
-        instance._auth_flow = None
+        instance.auth = None  # type: ignore[assignment]
+        instance._auth_flow = None  # type: ignore[assignment]
         instance._client = per_req      # type: ignore[assignment]
         instance._raw_client = per_req  # type: ignore[assignment]
 

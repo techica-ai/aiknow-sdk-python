@@ -7,7 +7,7 @@ All requests require ``admin_key`` (X-Admin-Key header).
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import httpx
 from aiknow_contracts.graph import (
@@ -274,17 +274,21 @@ class ObserveResource:
         """Delete a single source document, associated vectors and files."""
         res = self._delete(f"{_BASE}/sources/{source_id}", {"tenant_id": tenant_id})
         raise_for_status("Observe.delete_source", res)
-        return res.json()
+        return cast(dict[str, Any], res.json())
 
 
     def reset_tenant_data(self, tenant_id: str) -> dict[str, Any]:
         """Reset all demo data for a tenant (sources, vectors, files, graph nodes, sessions)."""
         try:
-            res = self._client.post(f"{_BASE}/reset", params={"tenant_id": tenant_id}, headers=self._headers)
+            res = self._client.post(
+                f"{_BASE}/reset",
+                params={"tenant_id": tenant_id},
+                headers=self._headers,
+            )
         except Exception as exc:
             wrap_httpx_errors(f"POST {_BASE}/reset", exc)
         raise_for_status("Observe.reset_tenant_data", res)
-        return res.json()
+        return cast(dict[str, Any], res.json())
 
     # ------------------------------------------------------------------
     # Vector DB (Qdrant)
@@ -610,17 +614,21 @@ class AsyncObserveResource:
         """Delete a single source document, associated vectors and files."""
         res = await self._delete(f"{_BASE}/sources/{source_id}", {"tenant_id": tenant_id})
         raise_for_status("Observe.delete_source", res)
-        return res.json()
+        return cast(dict[str, Any], res.json())
 
 
     async def reset_tenant_data(self, tenant_id: str) -> dict[str, Any]:
         """Reset all demo data for a tenant (sources, vectors, files, graph nodes, sessions)."""
         try:
-            res = await self._client.post(f"{_BASE}/reset", params={"tenant_id": tenant_id}, headers=self._headers)
+            res = await self._client.post(
+                f"{_BASE}/reset",
+                params={"tenant_id": tenant_id},
+                headers=self._headers,
+            )
         except Exception as exc:
             wrap_httpx_errors(f"POST {_BASE}/reset", exc)
         raise_for_status("Observe.reset_tenant_data", res)
-        return res.json()
+        return cast(dict[str, Any], res.json())
 
     # ------------------------------------------------------------------
     # Vector DB (Qdrant)

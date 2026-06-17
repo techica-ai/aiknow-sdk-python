@@ -3,7 +3,7 @@ escalate_to_supervisor, get_workflow_definition."""
 from __future__ import annotations
 
 import json
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from aiknow.agents.builtin_tools._base import BuiltinTool, ToolParam
 
@@ -28,7 +28,7 @@ class GetExecutionStatusTool(BuiltinTool):
         ),
     ]
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         exec_id = kwargs.get("execution_id") or ctx.agent_ctx.execution_id
 
         if not exec_id:
@@ -58,7 +58,7 @@ class GetExecutionStatusTool(BuiltinTool):
                 timeout=10.0,
             )
             response.raise_for_status()
-            return response.text
+            return cast(str, response.text)
         except Exception as exc:  # noqa: BLE001
             return f"[get_execution_status] Error: {exc}"
 
@@ -88,7 +88,7 @@ class ListExecutionsTool(BuiltinTool):
         ),
     ]
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         status_filter = kwargs.get("status")
         limit = int(kwargs.get("limit", 10))
 
@@ -157,7 +157,7 @@ class AdvanceExecutionTool(BuiltinTool):
         ),
     ]
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         exec_id = kwargs.get("execution_id") or ctx.agent_ctx.execution_id
         signal: str = kwargs.get("signal", "")
 
@@ -167,7 +167,10 @@ class AdvanceExecutionTool(BuiltinTool):
             return "[advance_execution] Missing required parameter: signal"
 
         if ctx.http_client is None:
-            return f"[advance_execution] HTTP client not configured. Would advance {exec_id} with '{signal}'."
+            return (
+                f"[advance_execution] HTTP client not configured. "
+                f"Would advance {exec_id} with '{signal}'."
+            )
 
         try:
             headers: dict[str, str] = {"Content-Type": "application/json"}
@@ -184,7 +187,10 @@ class AdvanceExecutionTool(BuiltinTool):
             data = response.json()
             new_status = data.get("status", "unknown")
             new_state = data.get("current_state", "unknown")
-            return f"✅ Đã tiếp tục luồng `{exec_id}` với signal `{signal}`. Trạng thái mới: **{new_status}** (state: {new_state})"
+            return (
+                f"✅ Đã tiếp tục luồng `{exec_id}` với signal `{signal}`. "
+                f"Trạng thái mới: **{new_status}** (state: {new_state})"
+            )
 
         except Exception as exc:  # noqa: BLE001
             return f"[advance_execution] Error: {exc}"
@@ -221,7 +227,7 @@ class EscalateToSupervisorTool(BuiltinTool):
         ),
     ]
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         reason: str = kwargs.get("reason", "")
         priority: str = kwargs.get("priority", "medium")
         notes: str = kwargs.get("notes", "")
@@ -288,14 +294,17 @@ class GetWorkflowDefinitionTool(BuiltinTool):
         ),
     ]
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         workflow_id = kwargs.get("workflow_id") or ctx.agent_ctx.workflow_id
 
         if not workflow_id:
             return "Không có workflow nào đang hoạt động."
 
         if ctx.http_client is None:
-            return f"[get_workflow_definition] HTTP client not configured for workflow: {workflow_id}"
+            return (
+                f"[get_workflow_definition] HTTP client not configured "
+                f"for workflow: {workflow_id}"
+            )
 
         try:
             headers: dict[str, str] = {}

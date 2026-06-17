@@ -44,7 +44,7 @@ class ContextProvider(ABC):
     name: str = ""
 
     @abstractmethod
-    async def provide(self, ctx: "AgentContext") -> str:
+    async def provide(self, ctx: AgentContext) -> str:
         """Return a text block to inject into the system prompt.
 
         Args:
@@ -72,7 +72,7 @@ class ExecutionStateProvider(ContextProvider):
 
     name = "execution_state"
 
-    async def provide(self, ctx: "AgentContext") -> str:
+    async def provide(self, ctx: AgentContext) -> str:
         if not ctx.execution_id:
             return ""
 
@@ -116,7 +116,7 @@ class SessionInfoProvider(ContextProvider):
 
     name = "session_info"
 
-    async def provide(self, ctx: "AgentContext") -> str:
+    async def provide(self, ctx: AgentContext) -> str:
         lines = [
             "## Session Info",
             f"- **Tenant**: `{ctx.tenant_id}`",

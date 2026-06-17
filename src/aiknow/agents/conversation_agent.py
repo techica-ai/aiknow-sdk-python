@@ -50,9 +50,8 @@ import json
 import logging
 import os
 import uuid
-from typing import Any, AsyncIterator
-
-import httpx
+from collections.abc import AsyncIterator
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -154,8 +153,8 @@ class AIKnowConversationAgent:
         """
         run_id: str = body.get("runId", str(uuid.uuid4()))
         thread_id: str = body.get("threadId", run_id)
-        messages: list[dict] = body.get("messages", [])
-        incoming_state: dict = body.get("state", {})
+        messages: list[dict[str, Any]] = body.get("messages", [])
+        incoming_state: dict[str, Any] = body.get("state", {})
 
         # 1. Extract last user message
         user_message = self._extract_last_user_message(messages)
@@ -223,7 +222,7 @@ class AIKnowConversationAgent:
         message: str,
         locale: str = "vi",
         caller_id: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """POST to Platform /api/v1/conversation via AsyncAIKnowClient.
 
         Args:
@@ -256,10 +255,10 @@ class AIKnowConversationAgent:
 
     def _build_agent_state(
         self,
-        turn: dict,
+        turn: dict[str, Any],
         session_id: str,
-        incoming_state: dict,
-    ) -> dict:
+        incoming_state: dict[str, Any],
+    ) -> dict[str, Any]:
         """Build the AG-UI StateSnapshot state dict from a ConversationTurn.
 
         The state is what ``useCoAgent<AIKnowAgentState>()`` sees in React.
@@ -290,9 +289,9 @@ class AIKnowConversationAgent:
 
     def _extra_state(
         self,
-        turn: dict,
-        incoming_state: dict,
-    ) -> dict:
+        turn: dict[str, Any],
+        incoming_state: dict[str, Any],
+    ) -> dict[str, Any]:
         """Hook for subclasses to merge App-specific state into StateSnapshot.
 
         Override this to add custom fields to the agent state.
@@ -317,7 +316,7 @@ class AIKnowConversationAgent:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _extract_last_user_message(messages: list[dict]) -> str:
+    def _extract_last_user_message(messages: list[dict[str, Any]]) -> str:
         """Return the content of the last user role message in the thread.
 
         Args:

@@ -50,7 +50,7 @@ class _PerRequestClient:
         bearer_token: str,
         tenant_id: str,
     ) -> None:
-        self._client = shared_client  # Shared — không owned, không close
+        self._client = shared_client  # Shared — not owned, not closed
         self._inject: dict[str, str] = {
             "Authorization": f"Bearer {bearer_token}",
             "X-Tenant-Id": tenant_id,
@@ -96,4 +96,4 @@ class _PerRequestClient:
                     yield line
         """
         kwargs["headers"] = self._merge(kwargs.pop("headers", None))
-        return self._client.stream(method, url, **kwargs)  # type: ignore[return-value]
+        return self._client.stream(method, url, **kwargs)

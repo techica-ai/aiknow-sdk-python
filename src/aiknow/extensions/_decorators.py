@@ -34,7 +34,8 @@ Usage::
         ...
 
 Design:
-- Decorators attach metadata to the callable via private attributes (_step_meta, _tool_meta, _agent_meta, etc.)
+- Decorators attach metadata to the callable via private attributes
+  (_step_meta, _tool_meta, _agent_meta, etc.)
 - Decorators also register into the module-level _default_registry
 - AiknowApp reads from its own LocalExtensionRegistry instance
 - No import of aiknow-core — SDK stays self-contained
@@ -50,7 +51,6 @@ from typing import Any
 
 from aiknow.extensions._local_registry import ExtensionEntry, _default_registry
 
-
 # ---------------------------------------------------------------------------
 # @step  (replaces deprecated @skill in SOP context)
 # ---------------------------------------------------------------------------
@@ -61,7 +61,7 @@ def step(
     description: dict[str, str] | None = None,
     required_permissions: list[str] | None = None,
     tags: list[str] | None = None,
-) -> Callable[[Callable], Callable]:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Declare a function as an AIKnow SOP Workflow Step.
 
     A workflow step is called by the AIKnow Platform when the SOP FSM
@@ -99,7 +99,7 @@ def step(
         "tags": tags or [],
     }
 
-    def decorator(fn: Callable) -> Callable:
+    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
         fn._step_meta = meta  # type: ignore[attr-defined]
         _default_registry.register(
             ExtensionEntry(name=name, ext_type="step", fn=fn, metadata=meta)
@@ -119,7 +119,7 @@ def skill(
     description: dict[str, str] | None = None,
     required_permissions: list[str] | None = None,
     tags: list[str] | None = None,
-) -> Callable[[Callable], Callable]:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Declare a function as an AIKnow SOP Workflow Step.
 
     .. deprecated:: 2.0
@@ -148,7 +148,7 @@ def tool(
     required_permissions: list[str] | None = None,
     tags: list[str] | None = None,
     remote: bool = False,
-) -> Callable[[Callable], Callable]:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Declare an async function as an Agent Tool.
 
     An agent tool is a capability that LLM agents can invoke autonomously
@@ -194,7 +194,7 @@ def tool(
         "remote": remote,
     }
 
-    def decorator(fn: Callable) -> Callable:
+    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
         fn._tool_meta = meta  # type: ignore[attr-defined]
         _default_registry.register(
             ExtensionEntry(name=name, ext_type="tool", fn=fn, metadata=meta)
@@ -387,7 +387,7 @@ def dialog(
 # ---------------------------------------------------------------------------
 
 
-def hook(event_type: str) -> Callable[[Callable], Callable]:
+def hook(event_type: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Declare a function as a lifecycle event handler.
 
     Args:
@@ -411,7 +411,7 @@ def hook(event_type: str) -> Callable[[Callable], Callable]:
     """
     meta: dict[str, Any] = {"event_type": event_type}
 
-    def decorator(fn: Callable) -> Callable:
+    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
         fn._hook_meta = meta  # type: ignore[attr-defined]
         _default_registry.register(
             ExtensionEntry(name=event_type, ext_type="hook", fn=fn, metadata=meta)
@@ -426,7 +426,7 @@ def hook(event_type: str) -> Callable[[Callable], Callable]:
 # ---------------------------------------------------------------------------
 
 
-def parser(content_type: str) -> Callable[[Callable], Callable]:
+def parser(content_type: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Declare a function as a custom document parser for a MIME type.
 
     Args:
@@ -446,7 +446,7 @@ def parser(content_type: str) -> Callable[[Callable], Callable]:
     """
     meta: dict[str, Any] = {"content_type": content_type}
 
-    def decorator(fn: Callable) -> Callable:
+    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
         fn._parser_meta = meta  # type: ignore[attr-defined]
         _default_registry.register(
             ExtensionEntry(name=content_type, ext_type="parser", fn=fn, metadata=meta)
@@ -462,7 +462,7 @@ def parser(content_type: str) -> Callable[[Callable], Callable]:
 # Full runtime logic lives in aiknow.agents.
 # ---------------------------------------------------------------------------
 
-def _make_agent_decorator(agent_type: str) -> Callable:
+def _make_agent_decorator(agent_type: str) -> Callable[..., Callable[[type], type]]:
     """Factory for agent decorators that differ only in default agent_type."""
 
     def decorator_factory(
@@ -598,7 +598,7 @@ def autonomous_agent(
 
 def router_agent(
     name: str,
-    intents: "list[Any]",
+    intents: list[Any],
     model: str | None = None,
     confidence_threshold: float = 0.6,
     llm_timeout: float = 10.0,

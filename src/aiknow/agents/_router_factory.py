@@ -16,11 +16,13 @@ Kept in a dedicated module to avoid PEP-563 (`from __future__ import
 annotations`) converting type hints into ForwardRef strings that
 FastAPI/Pydantic cannot resolve at schema-generation time.
 """
-from starlette.requests import Request
+from typing import Any, cast
+
 from fastapi.responses import StreamingResponse
+from starlette.requests import Request
 
 
-def make_agent_handler(executor):
+def make_agent_handler(executor: Any) -> Any:
     """Return a FastAPI-compatible async handler bound to *executor*.
 
     The returned coroutine function has concrete type annotations so
@@ -34,6 +36,7 @@ def make_agent_handler(executor):
     """
     async def _handle(request: Request) -> StreamingResponse:
         body = await request.json()
-        return await executor.handle_agui_request(body)
+        res = await executor.handle_agui_request(body)
+        return cast(StreamingResponse, res)
 
     return _handle

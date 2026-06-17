@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from aiknow.agents.builtin_tools._toolbox import BuiltinToolContext
@@ -60,7 +60,7 @@ class BuiltinTool(ABC):
 
     @abstractmethod
     async def execute(
-        self, ctx: "BuiltinToolContext", **kwargs: Any
+        self, ctx: BuiltinToolContext, **kwargs: Any
     ) -> str:
         """Execute the tool and return a string result.
 

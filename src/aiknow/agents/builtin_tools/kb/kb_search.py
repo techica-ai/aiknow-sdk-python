@@ -1,8 +1,7 @@
 """KB tools: kb_search, kb_list_sources, kb_get_document."""
 from __future__ import annotations
 
-import json
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from aiknow.agents.builtin_tools._base import BuiltinTool, ToolParam
 
@@ -52,7 +51,7 @@ class KbSearchTool(BuiltinTool):
         ),
     ]
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         query: str = kwargs.get("query", "")
         top_k: int = int(kwargs.get("top_k", 5))
         rerank: bool = bool(kwargs.get("rerank", True))
@@ -125,7 +124,7 @@ class KbListSourcesTool(BuiltinTool):
         ),
     ]
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         kb_id: str = kwargs.get("knowledge_base_id", "")
 
         if ctx.http_client is None:
@@ -182,7 +181,7 @@ class KbGetDocumentTool(BuiltinTool):
         ),
     ]
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         doc_id: str = kwargs.get("document_id", "")
         kb_id: str = kwargs.get("knowledge_base_id", "")
 

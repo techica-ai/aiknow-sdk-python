@@ -7,7 +7,7 @@ extend this base class.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from aiknow.agents.base import AgentContext, AgentMeta
@@ -30,10 +30,10 @@ class BaseAgentExecutor(ABC):
     def __init__(
         self,
         cls: type,
-        meta: "AgentMeta",
-        tool_registry: "AppToolRegistry",
+        meta: AgentMeta,
+        tool_registry: AppToolRegistry,
         llm_gateway_url: str,
-        runtime: "AgentRuntime",
+        runtime: AgentRuntime,
         toolbox: Any = None,
     ) -> None:
         self._cls = cls
@@ -59,7 +59,7 @@ class BaseAgentExecutor(ABC):
     # Helpers shared by all executors
     # ------------------------------------------------------------------
 
-    def _extract_context(self, body: dict[str, Any]) -> "AgentContext":
+    def _extract_context(self, body: dict[str, Any]) -> AgentContext:
         """Extract AgentContext from AG-UI request body.
 
         The AG-UI protocol passes agent state in ``body["state"]``.
@@ -74,7 +74,6 @@ class BaseAgentExecutor(ABC):
         from aiknow.agents.base import AgentContext
 
         state: dict[str, Any] = body.get("state") or {}
-        messages = body.get("messages") or []
 
         # Try to determine locale from messages or state
         locale = state.get("locale", "vi")
@@ -119,7 +118,7 @@ class BaseAgentExecutor(ABC):
 
     async def _call_tool(
         self,
-        ctx: "AgentContext",
+        ctx: AgentContext,
         tool_name: str,
         tool_args: dict[str, Any],
     ) -> str:
@@ -131,7 +130,7 @@ class BaseAgentExecutor(ABC):
 
         # Try built-in tool first
         if self._toolbox and self._toolbox.get(tool_name):
-            return await self._toolbox.execute(ctx, tool_name, tool_args)
+            return cast(str, await self._toolbox.execute(ctx, tool_name, tool_args))
 
         # Fall back to app-level @tool
         fn = self._tool_registry.get(tool_name)

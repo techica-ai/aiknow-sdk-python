@@ -35,7 +35,7 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 from aiknow._async_client import AsyncAIKnowClient
 from aiknow.extensions._local_registry import ExtensionEntry, LocalExtensionRegistry
@@ -109,7 +109,7 @@ class AiknowApp:
         self._agent_runtime: Any | None = None  # AgentRuntime — lazy init
 
     @classmethod
-    def from_env(cls) -> "AiknowApp":
+    def from_env(cls) -> AiknowApp:
         """Create an AiknowApp from environment variables.
 
         Required env vars:
@@ -120,7 +120,7 @@ class AiknowApp:
         """
         tenant_id = os.environ.get("AIKNOW_TENANT_ID")
         if not tenant_id:
-            raise EnvironmentError(
+            raise OSError(
                 "AIKNOW_TENANT_ID environment variable is not set. "
                 "Set it before calling AiknowApp.from_env()."
             )
@@ -134,7 +134,7 @@ class AiknowApp:
     # Registration API
     # ------------------------------------------------------------------
 
-    def register_step(self, fn: Callable) -> None:
+    def register_step(self, fn: Callable[..., Any]) -> None:
         """Register a @step-decorated function (SOP workflow step).
 
         Args:
@@ -146,7 +146,7 @@ class AiknowApp:
         # Accept both _step_meta (new) and _skill_meta (deprecated @skill)
         if hasattr(fn, "_step_meta"):
             meta: dict[str, Any] = fn._step_meta
-            ext_type = "step"
+            ext_type: Literal["step"] = "step"
         elif hasattr(fn, "_skill_meta"):
             import warnings
             warnings.warn(
@@ -166,7 +166,7 @@ class AiknowApp:
         self._registry.register(entry)
         logger.debug("Registered step: %s", meta["name"])
 
-    def register_skill(self, fn: Callable) -> None:
+    def register_skill(self, fn: Callable[..., Any]) -> None:
         """Register a @skill-decorated function.
 
         .. deprecated:: 2.0
@@ -180,7 +180,7 @@ class AiknowApp:
         )
         return self.register_step(fn)
 
-    def register_tool(self, fn: Callable) -> None:
+    def register_tool(self, fn: Callable[..., Any]) -> None:
         """Register a @tool-decorated function as an agent tool.
 
         Agent tools are callable by LLM agents during their reasoning loop.
@@ -275,7 +275,7 @@ class AiknowApp:
         self._registry.register(entry)
         logger.debug("Registered Dialog: %s", meta["id"])
 
-    def register_hook(self, event_type: str, fn: Callable) -> None:
+    def register_hook(self, event_type: str, fn: Callable[..., Any]) -> None:
         """Register a hook handler for a specific event type.
 
         Unlike ``@hook`` decorator (which auto-registers on import), this
@@ -294,7 +294,7 @@ class AiknowApp:
         self._registry.register(entry)
         logger.debug("Registered hook: %s → %s", event_type, fn.__name__)
 
-    def register_parser(self, fn: Callable) -> None:
+    def register_parser(self, fn: Callable[..., Any]) -> None:
         """Register a @parser-decorated function.
 
         Args:
@@ -523,7 +523,7 @@ class AiknowApp:
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _build_manifest(self) -> "Any":
+    def _build_manifest(self) -> Any:
         """Construct an AppManifest from the current local registry.
 
         SDK does NOT compile SOP/Dialog classes into WorkflowDefinition here.
@@ -622,7 +622,7 @@ class AiknowApp:
         for entry in self._registry.list_by_type("dialog"):
             cls = entry.fn
             try:
-                raw_slots: dict = getattr(cls, "slots", {})
+                raw_slots: dict[str, Any] = getattr(cls, "slots", {})
                 slots = {
                     slot_name: (
                         SlotDefinition(**slot_data)
@@ -663,7 +663,7 @@ class AiknowApp:
                     or []
                 )
 
-                declaration = DialogDeclaration(
+                dialog_decl = DialogDeclaration(
                     type="dialog",
                     slots=slots,
                     on_complete_skill=on_complete,
@@ -676,7 +676,7 @@ class AiknowApp:
                     WorkflowManifestContract(
                         workflow_id=entry.name,
                         version=entry.metadata.get("version", "1.0"),
-                        declaration=declaration,
+                        declaration=dialog_decl,
                     )
                 )
             except Exception as exc:  # noqa: BLE001
@@ -713,6 +713,7 @@ class AiknowApp:
             workflows=workflow_manifests,
             hooks=hook_manifests,
             tools=tool_manifests,
+            webhook_url=None,
         )
 
     async def _start_listener(self) -> None:
@@ -803,7 +804,7 @@ class AiknowApp:
         self._started = False
         logger.info("AiknowApp stopped [tenant=%s]", self.tenant_id)
 
-    async def __aenter__(self) -> "AiknowApp":
+    async def __aenter__(self) -> AiknowApp:
         await self.start()
         return self
 

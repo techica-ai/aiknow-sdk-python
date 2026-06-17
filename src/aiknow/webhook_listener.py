@@ -35,7 +35,7 @@ import logging
 from typing import Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, Response, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
 
@@ -77,17 +77,23 @@ class StepInvocationPayload(BaseModel):
     permissions: list[str] = Field(default_factory=list)
     user_context: dict[str, Any] = Field(
         default_factory=dict,
-        description="Seed data from start_execution.initial_inputs — forwarded verbatim to AppSkillDeps.user_context",
+        description=(
+            "Seed data from start_execution.initial_inputs — "
+            "forwarded verbatim to AppSkillDeps.user_context"
+        ),
     )
 
     @model_validator(mode="after")
-    def _resolve_step_name(self) -> "StepInvocationPayload":
+    def _resolve_step_name(self) -> StepInvocationPayload:
         """Normalize: if step_name is empty, copy skill_name (legacy) into it.
 
         Raises ValidationError (→ HTTP 422) at parse time if both are absent.
         """
         if not self.step_name and not self.skill_name:
-            raise ValueError("Either 'step_name' or 'skill_name' must be provided in the request body.")
+            raise ValueError(
+                "Either 'step_name' or 'skill_name' must be "
+                "provided in the request body."
+            )
         if not self.step_name:
             self.step_name = self.skill_name  # promote legacy field to canonical
         return self
@@ -166,7 +172,7 @@ class WebhookListener:
         self._advertise_host = advertise_host  # override for manifest URL
         self._dispatcher = SkillDispatcher(registry)
         self._tool_registry = tool_registry  # AppToolRegistry | None
-        self._server_task: asyncio.Task | None = None
+        self._server_task: asyncio.Task[Any] | None = None
         self._app = self._build_app()
 
     # ------------------------------------------------------------------
@@ -316,7 +322,7 @@ class WebhookListener:
         async def deliver_hook(
             event_type: str,
             request: Request,
-        ) -> dict:
+        ) -> dict[str, Any]:
             body = await request.body()
             await self._verify(body, request)
             
@@ -442,7 +448,7 @@ class WebhookListener:
                 )
 
         @app.get(f"{prefix}/health", summary="Health check")
-        async def health() -> dict:
+        async def health() -> dict[str, Any]:
             # list_by_type("step") includes both @step and @skill (legacy) entries
             steps = self._registry.list_by_type("step")
             tool_count = self._tool_registry.size() if self._tool_registry else 0
@@ -450,7 +456,12 @@ class WebhookListener:
                 name for name in (
                     [m.name for m in self._tool_registry.list_all()] if self._tool_registry else []
                 )
-                if (fn := self._tool_registry.get(name)) and getattr(fn, "_tool_meta", {}).get("remote", False)
+                if (
+                    self._tool_registry is not None
+                    and (fn := self._tool_registry.get(name))
+                    and (meta := getattr(fn, "_tool_meta", None))
+                    and meta.get("remote", False)
+                )
             ]
             return {
                 "status": "ok",

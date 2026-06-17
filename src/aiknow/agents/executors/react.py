@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from aiknow.agents.executors.base import BaseAgentExecutor
 
@@ -59,7 +59,7 @@ class ReActAgentExecutor(BaseAgentExecutor):
         message: str,
         *,
         ctx: Any = None,
-        history: list[dict] | None = None,
+        history: list[dict[str, Any]] | None = None,
     ) -> str:
         """Single-turn chat — returns full text response.
 
@@ -80,7 +80,7 @@ class ReActAgentExecutor(BaseAgentExecutor):
 
         system_prompt = await self._runtime.build_system_prompt(self.meta, ctx)
 
-        messages: list[dict] = []
+        messages: list[dict[str, Any]] = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         for m in (history or []):
@@ -120,8 +120,8 @@ class ReActAgentExecutor(BaseAgentExecutor):
 
     async def _llm_call(
         self,
-        messages: list[dict],
-        tool_schemas: list[dict],
+        messages: list[dict[str, Any]],
+        tool_schemas: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """Non-streaming LLM call via LiteLLM Gateway.
 
@@ -153,4 +153,4 @@ class ReActAgentExecutor(BaseAgentExecutor):
                 headers={"Content-Type": "application/json"},
             )
             response.raise_for_status()
-            return response.json()
+            return cast(dict[str, Any], response.json())

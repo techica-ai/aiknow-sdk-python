@@ -12,27 +12,6 @@ Public API::
 """
 from __future__ import annotations
 
-from aiknow.app import AiknowApp
-from aiknow.extensions import (
-    AppSkillDeps,  # deprecated alias
-    HookEvent,
-    SkillResult,   # deprecated alias
-    autonomous_agent,
-    conversation_agent,
-    copilot_agent,
-    hook,
-    parser,
-    rag_agent,
-    router_agent,
-    skill,         # deprecated
-    sop,
-    step,
-    supervisor_agent,
-    tool,
-    StepDeps,
-    StepResult,
-)
-
 from aiknow_contracts.chat import ChatRequest, ChatResponse
 from aiknow_contracts.graph import (
     GraphNeighbor,
@@ -67,9 +46,29 @@ from aiknow_contracts.vector import (
     VectorSearchResponse,
 )
 
+from aiknow.app import AiknowApp
+from aiknow.extensions import (
+    AppSkillDeps,  # deprecated alias
+    HookEvent,
+    SkillResult,  # deprecated alias
+    StepDeps,
+    StepResult,
+    autonomous_agent,
+    conversation_agent,
+    copilot_agent,
+    hook,
+    parser,
+    rag_agent,
+    router_agent,
+    skill,  # deprecated
+    sop,
+    step,
+    supervisor_agent,
+    tool,
+)
+
 from ._async_client import AsyncAIKnowClient, close_shared_http_client
 from ._client import AIKnowClient
-from ._span_builder import SpanBuilder
 from ._exceptions import (
     AIKnowAPIError,
     AIKnowConnectionError,
@@ -77,8 +76,9 @@ from ._exceptions import (
     AuthenticationError,
     TimeoutError,  # backward-compat alias
 )
-from .resources.workflows import ExecutionState
+from ._span_builder import SpanBuilder
 from .resources.knowledge import KnowledgeChunk
+from .resources.workflows import ExecutionState
 
 __all__ = [
     # App builder

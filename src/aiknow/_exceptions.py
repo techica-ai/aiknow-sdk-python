@@ -9,6 +9,8 @@ choose how broadly they want to catch:
 """
 from __future__ import annotations
 
+from typing import Any
+
 
 class AIKnowAPIError(Exception):
     """Base class for all AIKNOW SDK errors.
@@ -22,7 +24,7 @@ class AIKnowAPIError(Exception):
         self,
         message: str,
         status_code: int | None = None,
-        body: dict | None = None,
+        body: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code

@@ -1,9 +1,8 @@
 """Memory tools: get_session_info, get_conversation_history, save_agent_note."""
 from __future__ import annotations
 
-import json
 from datetime import datetime
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from aiknow.agents.builtin_tools._base import BuiltinTool, ToolParam
 
@@ -21,7 +20,7 @@ class GetSessionInfoTool(BuiltinTool):
     }
     parameters = []
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         agent_ctx = ctx.agent_ctx
         info: dict[str, Any] = {
             "session_id": agent_ctx.session_id,
@@ -59,7 +58,7 @@ class GetConversationHistoryTool(BuiltinTool):
         ),
     ]
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         last_n = int(kwargs.get("last_n", 10))
         session_id = ctx.agent_ctx.session_id
 
@@ -124,7 +123,7 @@ class SaveAgentNoteTool(BuiltinTool):
         ),
     ]
 
-    async def execute(self, ctx: "BuiltinToolContext", **kwargs: Any) -> str:
+    async def execute(self, ctx: BuiltinToolContext, **kwargs: Any) -> str:
         note: str = kwargs.get("note", "")
         category: str = kwargs.get("category", "general")
         session_id = ctx.agent_ctx.session_id

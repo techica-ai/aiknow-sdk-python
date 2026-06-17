@@ -69,7 +69,7 @@ class ExecutionState:
         self.current_state: str = data["current_state"]
         self.status: WorkflowStatus = data["status"]
         self.waiting_for_human: bool = data.get("waiting_for_human", False)
-        self.skill_outputs: dict[str, dict] = data.get("skill_outputs", {})
+        self.skill_outputs: dict[str, dict[str, Any]] = data.get("skill_outputs", {})
         self.error_message: str | None = data.get("error_message")
         self.metadata: dict[str, Any] = data.get("metadata", {})
         # Phase 2: available_signals populated by Platform when status='waiting_human'

@@ -1,8 +1,8 @@
 """
-agents/base.py — Core data types cho AgentRuntime layer.
+agents/base.py — Core data types for the AgentRuntime layer.
 
-Các kiểu dữ liệu này được dùng ở cả Agent Executor lẫn Context Provider
-để truyền context từ platform → agent → LLM.
+These data types are used in both the Agent Executor and the Context Provider
+to pass context from platform → agent → LLM.
 """
 from __future__ import annotations
 

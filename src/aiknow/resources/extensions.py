@@ -14,6 +14,7 @@ Error handling:
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import httpx
 
@@ -32,7 +33,7 @@ class AsyncExtensionsResource:
     def __init__(self, client: httpx.AsyncClient) -> None:
         self._client = client
 
-    async def register_manifest(self, manifest_dict: dict) -> None:
+    async def register_manifest(self, manifest_dict: dict[str, Any]) -> None:
         """Upload the full AppManifest to the Platform.
 
         The Platform processes this by:

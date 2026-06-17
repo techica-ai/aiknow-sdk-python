@@ -34,18 +34,17 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from aiknow.agents.base import AgentMeta
+from aiknow.agents.builtin_tools._toolbox import BuiltinToolBox
 from aiknow.agents.context_providers import (
     ContextProvider,
-    BUILTIN_PROVIDERS,
     ExecutionStateProvider,
     SessionInfoProvider,
 )
 from aiknow.agents.tool_registry import AppToolRegistry
-from aiknow.agents.builtin_tools._toolbox import BuiltinToolBox
 
 if TYPE_CHECKING:
     pass
@@ -193,6 +192,7 @@ class AgentRuntime:
         try:
             from fastapi import APIRouter
             from fastapi.responses import StreamingResponse
+
             from aiknow.agents._router_factory import make_agent_handler
         except ImportError as exc:
             raise ImportError(
@@ -231,7 +231,7 @@ class AgentRuntime:
     # ------------------------------------------------------------------
 
     async def build_system_prompt(
-        self, agent_meta: AgentMeta, ctx: "AgentContext"  # noqa: F821
+        self, agent_meta: AgentMeta, ctx: AgentContext  # noqa: F821
     ) -> str:
         """Assemble full system prompt = static prompt + provider injections.
 
@@ -245,7 +245,6 @@ class AgentRuntime:
         Returns:
             Full system prompt string.
         """
-        from aiknow.agents.base import AgentContext  # local import to avoid circular
 
         parts: list[str] = []
         if agent_meta.system_prompt:
@@ -290,22 +289,27 @@ class AgentRuntime:
     def _build_executor(self, cls: type, meta: AgentMeta) -> Any:
         """Instantiate the correct executor based on agent_type."""
         agent_type = meta.agent_type
-        common_kwargs = dict(
-            cls=cls,
-            meta=meta,
-            tool_registry=self._tool_registry,
-            toolbox=self._toolbox,
-            llm_gateway_url=self._llm_gateway_url,
-            runtime=self,
-        )
-
         if agent_type == "copilot":
             from aiknow.agents.executors.copilot import CopilotAgentExecutor
-            return CopilotAgentExecutor(**common_kwargs)
+            return CopilotAgentExecutor(
+                cls=cls,
+                meta=meta,
+                tool_registry=self._tool_registry,
+                toolbox=self._toolbox,
+                llm_gateway_url=self._llm_gateway_url,
+                runtime=self,
+            )
 
         if agent_type in ("rag", "autonomous", "conversation"):
             from aiknow.agents.executors.react import ReActAgentExecutor
-            return ReActAgentExecutor(**common_kwargs)
+            return ReActAgentExecutor(
+                cls=cls,
+                meta=meta,
+                tool_registry=self._tool_registry,
+                toolbox=self._toolbox,
+                llm_gateway_url=self._llm_gateway_url,
+                runtime=self,
+            )
 
         if agent_type == "router":
             from aiknow.agents.executors.router import RouterAgentExecutor
@@ -326,7 +330,14 @@ class AgentRuntime:
             agent_type,
         )
         from aiknow.agents.executors.react import ReActAgentExecutor
-        return ReActAgentExecutor(**common_kwargs)
+        return ReActAgentExecutor(
+            cls=cls,
+            meta=meta,
+            tool_registry=self._tool_registry,
+            toolbox=self._toolbox,
+            llm_gateway_url=self._llm_gateway_url,
+            runtime=self,
+        )
 
 
 # Re-export AgentContext here for convenience

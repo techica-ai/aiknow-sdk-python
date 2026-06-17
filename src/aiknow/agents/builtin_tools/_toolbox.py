@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from aiknow.agents.builtin_tools._base import BuiltinTool
 
@@ -34,7 +34,7 @@ class BuiltinToolContext:
         extra:           Arbitrary extra context for custom tools.
     """
 
-    agent_ctx: "AgentContext"
+    agent_ctx: AgentContext
     http_client: Any = None          # httpx.AsyncClient — optional
     platform_url: str = "http://localhost:8000"
     litellm_url: str = "http://localhost:4000"
@@ -131,7 +131,7 @@ class BuiltinToolBox:
 
     async def execute(
         self,
-        agent_ctx: "AgentContext",
+        agent_ctx: AgentContext,
         tool_name: str,
         tool_args: dict[str, Any],
         *,
@@ -165,7 +165,9 @@ class BuiltinToolBox:
 
         try:
             result = await tool.execute(ctx, **tool_args)
-            return result if isinstance(result, str) else json.dumps(result, ensure_ascii=False, default=str)
+            if isinstance(result, str):
+                return result
+            return json.dumps(result, ensure_ascii=False, default=str)
         except Exception as exc:  # noqa: BLE001
             logger.error("BuiltinTool '%s' error: %s", tool_name, exc)
             return f"[Tool error: {exc}]"
@@ -189,7 +191,9 @@ class BuiltinToolBox:
             "get_workflow_definition": "aiknow.agents.builtin_tools.platform.get_execution_status",
             # Memory
             "get_session_info":       "aiknow.agents.builtin_tools.memory.get_session_info",
-            "get_conversation_history": "aiknow.agents.builtin_tools.memory.get_conversation_history",
+            "get_conversation_history": (
+                "aiknow.agents.builtin_tools.memory.get_conversation_history"
+            ),
             "save_agent_note":        "aiknow.agents.builtin_tools.memory.save_agent_note",
             # Utility
             "format_currency":        "aiknow.agents.builtin_tools.utility.format_currency",

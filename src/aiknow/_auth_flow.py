@@ -4,14 +4,16 @@ Supports both synchronous and asynchronous request pipelines.
 """
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator, Generator
+from typing import Any
+
 import httpx
-from typing import Generator, AsyncGenerator
 
 
 class AIKnowAuth(httpx.Auth):
     """Custom httpx authentication class managing bearer token and automatic refresh."""
 
-    def __init__(self, auth_resource, auto_refresh: bool = True) -> None:
+    def __init__(self, auth_resource: Any, auto_refresh: bool = True) -> None:
         self.auth_resource = auth_resource
         self.auto_refresh = auto_refresh
 
@@ -30,7 +32,9 @@ class AIKnowAuth(httpx.Auth):
                 request.headers["Authorization"] = f"Bearer {self.auth_resource.access_token}"
                 yield request
 
-    async def async_auth_flow(self, request: httpx.Request) -> AsyncGenerator[httpx.Request, httpx.Response]:
+    async def async_auth_flow(
+        self, request: httpx.Request
+    ) -> AsyncGenerator[httpx.Request, httpx.Response]:
         # Inject access token if present
         if self.auth_resource.access_token:
             request.headers["Authorization"] = f"Bearer {self.auth_resource.access_token}"

@@ -72,8 +72,8 @@ _ROUTER_USER_TEMPLATE = "Customer message: {text}"
 class _CompiledSpec:
     """Pre-compiled version of IntentSpec for fast matching."""
     spec: IntentSpec
-    patterns: list[re.Pattern]
-    slot_patterns: dict[str, re.Pattern]
+    patterns: list[re.Pattern[str]]
+    slot_patterns: dict[str, re.Pattern[str]]
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +164,7 @@ class RouterAgentExecutor:
                 self._llm_classify(text),
                 timeout=self._llm_timeout,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(
                 "RouterAgentExecutor: LLM call timed out (%.1fs) — returning 'none'",
                 self._llm_timeout,

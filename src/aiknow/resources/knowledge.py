@@ -64,7 +64,9 @@ class KnowledgeChunk:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def __str__(self) -> str:
-        return f"[{self.source}] {self.content[:120]}…" if len(self.content) > 120 else f"[{self.source}] {self.content}"
+        if len(self.content) > 120:
+            return f"[{self.source}] {self.content[:120]}…"
+        return f"[{self.source}] {self.content}"
 
 
 class AsyncKnowledgeResource:
@@ -82,6 +84,13 @@ class AsyncKnowledgeResource:
         client: httpx.AsyncClient,
         tenant_id: str | None = None,
     ) -> None:
+        import warnings
+        warnings.warn(
+            "client.knowledge is deprecated and will be removed in v5.0.0. "
+            "Use Pipeline API (POST /pipelines) with retrieval stage instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._client = client
         self._tenant_id = tenant_id
         # Track whether the dedicated /retrieval/search endpoint is available
@@ -242,7 +251,7 @@ class AsyncKnowledgeResource:
         try:
             data = response.json()
             # Platform /chat/ask returns {answer, citations: [{source, content, score}]}
-            citations: list[dict] = data.get("citations", [])
+            citations: list[dict[str, Any]] = data.get("citations", [])
             result = []
             for cit in citations[:top_k]:
                 score = float(cit.get("score", 0.0))

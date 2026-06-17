@@ -47,11 +47,11 @@ class AppToolRegistry:
     """
 
     def __init__(self) -> None:
-        self._tools: dict[str, Callable] = {}
+        self._tools: dict[str, Callable[..., Any]] = {}
         self._meta: dict[str, ToolMeta] = {}
         self._schemas: dict[str, dict[str, Any]] = {}
 
-    def register(self, fn: Callable) -> None:
+    def register(self, fn: Callable[..., Any]) -> None:
         """Register a ``@tool``-decorated function.
 
         Args:
@@ -79,7 +79,7 @@ class AppToolRegistry:
         self._schemas[meta.name] = self._build_schema(fn, meta)
         logger.debug("AppToolRegistry: registered tool '%s'.", meta.name)
 
-    def get(self, name: str) -> Callable | None:
+    def get(self, name: str) -> Callable[..., Any] | None:
         """Get a registered tool function by name."""
         return self._tools.get(name)
 
@@ -108,7 +108,7 @@ class AppToolRegistry:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _build_schema(fn: Callable, meta: ToolMeta) -> dict[str, Any]:
+    def _build_schema(fn: Callable[..., Any], meta: ToolMeta) -> dict[str, Any]:
         """Generate OpenAI-compatible function schema from function signature.
 
         Args:

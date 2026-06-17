@@ -8,14 +8,13 @@ from typing import Self
 
 import httpx
 
-from ._exceptions import AIKnowConnectionError, AIKnowTimeoutError
+from ._auth_flow import AIKnowAuth
+from .resources.auth import AuthResource
 from .resources.chat import ChatResource
 from .resources.conversation import ConversationResource
 from .resources.ingestion import IngestionResource
 from .resources.observe import ObserveResource
-from .resources.auth import AuthResource
 from .resources.users import UsersResource
-from ._auth_flow import AIKnowAuth
 
 _DEFAULT_BASE_URL = "http://localhost:8000/api/v1"
 
