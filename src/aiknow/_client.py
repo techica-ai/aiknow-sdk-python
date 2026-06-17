@@ -4,7 +4,7 @@ AIKNOW SDK — synchronous client.
 from __future__ import annotations
 
 import os
-from typing import Any, Self
+from typing import Any, Self, cast
 
 import httpx
 
@@ -129,7 +129,7 @@ class AIKnowClient:
         parser: str = "markitdown",
         config: dict[str, Any] | None = None,
         persist: bool = False,
-    ) -> dict[str, Any]:
+     ) -> dict[str, Any]:
         """Parse an existing registered source document (sync)."""
         payload = {
             "source_id": source_id,
@@ -139,7 +139,7 @@ class AIKnowClient:
         }
         res = self._client.post("/pipeline/parse", json=payload)
         res.raise_for_status()
-        return res.json()
+        return cast(dict[str, Any], res.json())
 
     def chunk(
         self,
@@ -163,7 +163,7 @@ class AIKnowClient:
         }
         res = self._client.post("/pipeline/chunk", json=payload)
         res.raise_for_status()
-        return res.json()
+        return cast(dict[str, Any], res.json())
 
     def get_state(self, state_token: str) -> Any:
         """Fetch intermediate pipeline state from token and deserialize it (sync)."""
@@ -186,4 +186,4 @@ class AIKnowClient:
         """List all active and persistent states (sync)."""
         res = self._client.get("/pipeline/states")
         res.raise_for_status()
-        return res.json()
+        return cast(list[dict[str, Any]], res.json())

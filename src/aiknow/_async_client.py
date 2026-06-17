@@ -258,7 +258,7 @@ class AsyncAIKnowClient:
         }
         res = await self._client.post("/pipeline/parse", json=payload)
         res.raise_for_status()
-        return res.json()
+        return cast(dict[str, Any], res.json())
 
     async def chunk(
         self,
@@ -282,7 +282,7 @@ class AsyncAIKnowClient:
         }
         res = await self._client.post("/pipeline/chunk", json=payload)
         res.raise_for_status()
-        return res.json()
+        return cast(dict[str, Any], res.json())
 
     async def get_state(self, state_token: str) -> Any:
         """Fetch intermediate pipeline state from token and deserialize it (async)."""
@@ -305,7 +305,7 @@ class AsyncAIKnowClient:
         """List all active and persistent states (async)."""
         res = await self._client.get("/pipeline/states")
         res.raise_for_status()
-        return res.json()
+        return cast(list[dict[str, Any]], res.json())
 
     # ---------------------------------------------------------------------------
     # BFF / Proxy factory
