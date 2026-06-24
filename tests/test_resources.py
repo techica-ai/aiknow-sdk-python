@@ -23,6 +23,7 @@ from aiknow.resources.conversation import (
     ConversationResource,
     GraphTurnResult,
 )
+from aiknow_contracts.chat_models import PillarType, CheckpointApprovalStatus
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -85,7 +86,7 @@ class TestGraphTurnSync:
         )
         assert result.is_delegated is True
         assert result.handoff is not None
-        assert result.handoff["to_pillar"] == "agentic"
+        assert result.handoff.to_pillar == PillarType.AGENTIC
 
     def test_raises_on_auth_error(self):
         """401 → AuthenticationError."""
@@ -152,14 +153,15 @@ class TestGraphTurnAsync:
             "outcome": "delegated",
             "stop_reason": "DELEGATE",
             "is_delegated": True,
-            "handoff": {"from": "graph", "to": "agent"},
+            "handoff": {"from_pillar": "graph", "to_pillar": "agentic"},
         })
         r = AsyncConversationResource(mock_client)
         result = await r.graph_turn(
             session_id="sess-d", graph_id="g", message="m",
         )
         assert result.is_delegated is True
-        assert result.handoff["to"] == "agent"
+        assert result.handoff is not None
+        assert result.handoff.to_pillar == PillarType.AGENTIC
 
     @pytest.mark.asyncio
     async def test_raises_on_error(self):
@@ -190,7 +192,7 @@ class TestApproveCheckpoint:
             session_id="frozen-sess", decision="approve", approver_id="admin-1",
         )
         assert isinstance(result, ApproveCheckpointResult)
-        assert result.status == "approved"
+        assert result.status == CheckpointApprovalStatus.APPROVED
         assert result.current_node == "verify"
 
     @pytest.mark.asyncio
@@ -206,7 +208,7 @@ class TestApproveCheckpoint:
             session_id="frozen-sess", decision="reject", approver_id="admin-2",
         )
         assert isinstance(result, ApproveCheckpointResult)
-        assert result.status == "rejected"
+        assert result.status == CheckpointApprovalStatus.REJECTED
 
     def test_raises_on_non_frozen(self):
         """Session not frozen → 400 → AIKnowAPIError."""

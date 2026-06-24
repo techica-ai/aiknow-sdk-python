@@ -19,6 +19,7 @@ from .resources.knowledge import KnowledgeResource
 from .resources.observe import ObserveResource
 from .resources.users import UsersResource
 from .resources.workflows import WorkflowsResource
+from .resources.graphs import GraphsResource
 
 
 class AIKnowClient:
@@ -89,6 +90,7 @@ class AIKnowClient:
         self.users = UsersResource(self._client)
         self.extensions = ExtensionsResource(self._client)
         self.workflows = WorkflowsResource(self._client)
+        self.graphs = GraphsResource(self._client)
         self.knowledge = KnowledgeResource(self._client)
         self.observe: ObserveResource | None = (
             ObserveResource(self._client, resolved_admin_key)

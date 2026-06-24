@@ -22,6 +22,7 @@ from .resources.knowledge import KnowledgeChunk as KnowledgeChunk
 from .resources.observe import AsyncObserveResource
 from .resources.users import AsyncUsersResource
 from .resources.workflows import AsyncWorkflowsResource
+from .resources.graphs import AsyncGraphsResource
 
 # ---------------------------------------------------------------------------
 # Shared HTTP transport singleton
@@ -150,6 +151,7 @@ class AsyncAIKnowClient:
         self.users = AsyncUsersResource(self._client)
         self.extensions = AsyncExtensionsResource(self._client)
         self.workflows = AsyncWorkflowsResource(self._client)
+        self.graphs = AsyncGraphsResource(self._client)
         self.knowledge = AsyncKnowledgeResource(
             self._client,
             tenant_id=tenant_id,  # Propagate default tenant for KB searches
@@ -354,6 +356,7 @@ class AsyncAIKnowClient:
         instance.users = AsyncUsersResource(per_req)            # type: ignore[arg-type]
         instance.extensions = AsyncExtensionsResource(per_req)  # type: ignore[arg-type]
         instance.workflows = AsyncWorkflowsResource(per_req)    # type: ignore[arg-type]
+        instance.graphs = AsyncGraphsResource(per_req)          # type: ignore[arg-type]
         instance.knowledge = AsyncKnowledgeResource(
             per_req, tenant_id=tenant_id  # type: ignore[arg-type]
         )

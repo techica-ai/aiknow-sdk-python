@@ -8,6 +8,7 @@ from typing import Any, cast
 import httpx
 from pydantic import BaseModel
 
+from aiknow_contracts.chat_models import PillarType, CheckpointApprovalStatus
 from .._http import raise_for_status, wrap_httpx_errors
 
 
@@ -17,8 +18,8 @@ class HandoffInfo(BaseModel):
     Shared across API, SDK, and BFF to prevent contract drift.
     """
 
-    from_pillar: str
-    to_pillar: str
+    from_pillar: PillarType
+    to_pillar: PillarType
     context_payload: dict[str, Any] = {}
 
 
@@ -41,9 +42,17 @@ class ApproveCheckpointResult(BaseModel):
     """Typed response from approve_checkpoint."""
 
     session_id: str
-    status: str
+    status: CheckpointApprovalStatus
     current_node: str | None = None
     message: str | None = None
+    # Optional turn result fields from GraphTurnResponse
+    outcome: str | None = None
+    stop_reason: str | None = None
+    is_frozen: bool = False
+    current_graph_id: str | None = None
+    is_delegated: bool = False
+    handoff: HandoffInfo | None = None
+    features: dict[str, Any] = {}
 
 
 class _ConversationResourceBase:
@@ -214,7 +223,14 @@ class ConversationResource(_ConversationResourceBase):
         except Exception as exc:
             wrap_httpx_errors("Conversation.approve_checkpoint", exc)
         raise_for_status("Conversation.approve_checkpoint", res)
-        return ApproveCheckpointResult.model_validate(res.json())
+        data = res.json()
+        if "status" not in data:
+            data["status"] = (
+                CheckpointApprovalStatus.APPROVED
+                if decision == "approve"
+                else CheckpointApprovalStatus.REJECTED
+            )
+        return ApproveCheckpointResult.model_validate(data)
 
     def list_graphs(self, tenant_id: str = "default") -> list[str]:
         """List available conversation graph IDs (sync).
@@ -405,7 +421,14 @@ class AsyncConversationResource(_ConversationResourceBase):
         except Exception as exc:
             wrap_httpx_errors("Conversation.approve_checkpoint", exc)
         raise_for_status("Conversation.approve_checkpoint", res)
-        return ApproveCheckpointResult.model_validate(res.json())
+        data = res.json()
+        if "status" not in data:
+            data["status"] = (
+                CheckpointApprovalStatus.APPROVED
+                if decision == "approve"
+                else CheckpointApprovalStatus.REJECTED
+            )
+        return ApproveCheckpointResult.model_validate(data)
 
     async def list_graphs(self, tenant_id: str = "default") -> list[str]:
         """List available conversation graph IDs (async).
