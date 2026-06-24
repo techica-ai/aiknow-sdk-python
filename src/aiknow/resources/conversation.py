@@ -204,6 +204,75 @@ class ConversationResource(_ConversationResourceBase):
         raise_for_status("Conversation.approve_checkpoint", res)
         return ApproveCheckpointResult.model_validate(res.json())
 
+    def list_graphs(self, tenant_id: str = "default") -> list[str]:
+        """List available conversation graph IDs (sync).
+
+        Args:
+            tenant_id: Tenant identifier.
+
+        Returns:
+            List of graph ID strings.
+
+        Raises:
+            Exception: If the HTTP request fails.
+        """
+        try:
+            res = self._client.get(
+                "/conversation/graphs", params={"tenant_id": tenant_id}
+            )
+        except Exception as exc:
+            wrap_httpx_errors("Conversation.list_graphs", exc)
+        raise_for_status("Conversation.list_graphs", res)
+        data = res.json()
+        return cast(list[str], data.get("graph_ids", []))
+
+    def list_sessions(
+        self,
+        tenant_id: str = "default",
+        frozen_only: bool = False,
+    ) -> list[dict[str, Any]]:
+        """List conversation sessions (sync).
+
+        Args:
+            tenant_id: Tenant identifier.
+            frozen_only: If True, return only frozen (WAIT_APPROVAL) sessions.
+
+        Returns:
+            List of session summary dicts.
+
+        Raises:
+            Exception: If the HTTP request fails.
+        """
+        params: dict[str, Any] = {"tenant_id": tenant_id}
+        if frozen_only:
+            params["frozen"] = "true"
+        try:
+            res = self._client.get("/conversation/sessions", params=params)
+        except Exception as exc:
+            wrap_httpx_errors("Conversation.list_sessions", exc)
+        raise_for_status("Conversation.list_sessions", res)
+        data = res.json()
+        return cast(list[dict[str, Any]], data.get("sessions", []))
+
+    def get_session(self, session_id: str) -> dict[str, Any]:
+        """Get full session detail (sync).
+
+        Args:
+            session_id: Session identifier.
+
+        Returns:
+            Full session state dict.
+
+        Raises:
+            Exception: If the HTTP request fails or session is not found.
+        """
+        try:
+            res = self._client.get(f"/conversation/sessions/{session_id}")
+        except Exception as exc:
+            wrap_httpx_errors("Conversation.get_session", exc)
+        raise_for_status("Conversation.get_session", res)
+        return cast(dict[str, Any], res.json())
+
 
 class AsyncConversationResource(_ConversationResourceBase):
     """Asynchronous conversation resource."""
@@ -321,3 +390,72 @@ class AsyncConversationResource(_ConversationResourceBase):
             wrap_httpx_errors("Conversation.approve_checkpoint", exc)
         raise_for_status("Conversation.approve_checkpoint", res)
         return ApproveCheckpointResult.model_validate(res.json())
+
+    async def list_graphs(self, tenant_id: str = "default") -> list[str]:
+        """List available conversation graph IDs (async).
+
+        Args:
+            tenant_id: Tenant identifier.
+
+        Returns:
+            List of graph ID strings.
+
+        Raises:
+            Exception: If the HTTP request fails.
+        """
+        try:
+            res = await self._client.get(
+                "/conversation/graphs", params={"tenant_id": tenant_id}
+            )
+        except Exception as exc:
+            wrap_httpx_errors("Conversation.list_graphs", exc)
+        raise_for_status("Conversation.list_graphs", res)
+        data = res.json()
+        return cast(list[str], data.get("graph_ids", []))
+
+    async def list_sessions(
+        self,
+        tenant_id: str = "default",
+        frozen_only: bool = False,
+    ) -> list[dict[str, Any]]:
+        """List conversation sessions (async).
+
+        Args:
+            tenant_id: Tenant identifier.
+            frozen_only: If True, return only frozen (WAIT_APPROVAL) sessions.
+
+        Returns:
+            List of session summary dicts.
+
+        Raises:
+            Exception: If the HTTP request fails.
+        """
+        params: dict[str, Any] = {"tenant_id": tenant_id}
+        if frozen_only:
+            params["frozen"] = "true"
+        try:
+            res = await self._client.get("/conversation/sessions", params=params)
+        except Exception as exc:
+            wrap_httpx_errors("Conversation.list_sessions", exc)
+        raise_for_status("Conversation.list_sessions", res)
+        data = res.json()
+        return cast(list[dict[str, Any]], data.get("sessions", []))
+
+    async def get_session(self, session_id: str) -> dict[str, Any]:
+        """Get full session detail (async).
+
+        Args:
+            session_id: Session identifier.
+
+        Returns:
+            Full session state dict.
+
+        Raises:
+            Exception: If the HTTP request fails or session is not found.
+        """
+        try:
+            res = await self._client.get(f"/conversation/sessions/{session_id}")
+        except Exception as exc:
+            wrap_httpx_errors("Conversation.get_session", exc)
+        raise_for_status("Conversation.get_session", res)
+        return cast(dict[str, Any], res.json())
