@@ -10,6 +10,7 @@ from typing import Any, Self, cast
 import httpx
 
 from ._auth_flow import AIKnowAuth
+from ._http import _DEFAULT_BASE_URL
 from ._span_builder import SpanBuilder as SpanBuilder  # re-export
 from .resources.auth import AsyncAuthResource
 from .resources.chat import AsyncChatResource
@@ -78,8 +79,6 @@ async def close_shared_http_client() -> None:
     if _SHARED_HTTP_CLIENT is not None:
         await _SHARED_HTTP_CLIENT.aclose()
         _SHARED_HTTP_CLIENT = None
-
-_DEFAULT_BASE_URL = "http://localhost:8000/api/v1"
 
 
 class AsyncAIKnowClient:

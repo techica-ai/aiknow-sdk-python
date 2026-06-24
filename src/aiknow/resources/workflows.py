@@ -260,3 +260,153 @@ class AsyncWorkflowsResource:
             wrap_httpx_errors("Workflows.list_executions", exc)
         raise_for_status("Workflows.list_executions", response)
         return [ExecutionState(item) for item in response.json()]
+
+
+class WorkflowsResource:
+    """Sync HTTP resource for managing workflow executions.
+
+    Args:
+        client: Shared httpx.Client (injected by AIKnowClient).
+    """
+
+    def __init__(self, client: httpx.Client) -> None:
+        self._client = client
+
+    def start_execution(
+        self,
+        workflow_id: str,
+        initial_inputs: dict[str, Any] | None = None,
+        session_id: str | None = None,
+        traceparent: str | None = None,
+    ) -> ExecutionState:
+        """Start a new workflow execution (sync).
+
+        Args:
+            workflow_id:    ID of the workflow to execute (must be registered).
+            initial_inputs: Seed data forwarded to the first skill node.
+            session_id:     Optional chat session to link this execution to.
+            traceparent:    W3C traceparent header value.
+
+        Returns:
+            ExecutionState snapshot.
+
+        Raises:
+            AIKnowAPIError:        404 if workflow not found; 422 on bad input.
+            AIKnowConnectionError: Network-level failure.
+        """
+        payload: dict[str, Any] = {"workflow_id": workflow_id}
+        if initial_inputs:
+            payload["initial_inputs"] = initial_inputs
+        if session_id:
+            payload["session_id"] = session_id
+
+        extra_headers: dict[str, str] = {}
+        if traceparent:
+            extra_headers["traceparent"] = traceparent
+
+        try:
+            response = self._client.post(
+                "/workflow/executions",
+                json=payload,
+                headers=extra_headers or None,
+            )
+        except Exception as exc:
+            wrap_httpx_errors("Workflows.start_execution", exc)
+        raise_for_status("Workflows.start_execution", response)
+
+        state = ExecutionState(response.json())
+        logger.info(
+            "Execution started: id=%s workflow=%s status=%s",
+            state.execution_id, state.workflow_id, state.status,
+        )
+        return state
+
+    def get_execution(self, execution_id: str) -> ExecutionState:
+        """Retrieve the current snapshot of a workflow execution (sync).
+
+        Args:
+            execution_id: UUID of the execution to retrieve.
+
+        Returns:
+            Current ExecutionState.
+
+        Raises:
+            AIKnowAPIError: 404 if execution not found; 403 if access denied.
+        """
+        try:
+            response = self._client.get(f"/workflow/executions/{execution_id}")
+        except Exception as exc:
+            wrap_httpx_errors("Workflows.get_execution", exc)
+        raise_for_status("Workflows.get_execution", response)
+        return ExecutionState(response.json())
+
+    def advance(
+        self,
+        execution_id: str,
+        signal: str,
+        payload: dict[str, Any] | None = None,
+    ) -> ExecutionState:
+        """Resume a paused (waiting_human) workflow execution (sync).
+
+        Args:
+            execution_id: UUID of the waiting execution.
+            signal:       Outcome string matching a transition from the current node.
+            payload:      Optional extra context from the human approver.
+
+        Returns:
+            Updated ExecutionState after resumption.
+
+        Raises:
+            AIKnowAPIError: 404 not found; 403 access denied;
+                            422 if execution is not in waiting_human status.
+        """
+        body: dict[str, Any] = {"signal": signal}
+        if payload:
+            body["payload"] = payload
+
+        try:
+            response = self._client.post(
+                f"/workflow/executions/{execution_id}/advance",
+                json=body,
+            )
+        except Exception as exc:
+            wrap_httpx_errors("Workflows.advance", exc)
+        raise_for_status("Workflows.advance", response)
+
+        state = ExecutionState(response.json())
+        logger.info(
+            "Execution advanced: id=%s signal=%s status=%s",
+            execution_id, signal, state.status,
+        )
+        return state
+
+    def list_executions(
+        self,
+        status: WorkflowStatus | None = None,
+        workflow_id: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> list[ExecutionState]:
+        """List workflow executions with optional filters (sync).
+
+        Args:
+            status:      Filter by execution status. None = all statuses.
+            workflow_id: Filter by workflow definition ID. None = all workflows.
+            page:        Page number (1-indexed).
+            page_size:   Results per page (max 100).
+
+        Returns:
+            List of ExecutionState snapshots, most recent first.
+        """
+        params: dict[str, Any] = {"page": page, "page_size": page_size}
+        if status:
+            params["status"] = status
+        if workflow_id:
+            params["workflow_id"] = workflow_id
+
+        try:
+            response = self._client.get("/workflow/executions", params=params)
+        except Exception as exc:
+            wrap_httpx_errors("Workflows.list_executions", exc)
+        raise_for_status("Workflows.list_executions", response)
+        return [ExecutionState(item) for item in response.json()]

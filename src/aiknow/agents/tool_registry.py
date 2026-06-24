@@ -24,6 +24,8 @@ from __future__ import annotations
 
 import inspect
 import logging
+import types
+import typing
 from collections.abc import Callable
 from typing import Any
 
@@ -144,10 +146,32 @@ class AppToolRegistry:
             ann = param.annotation
             json_type = "string"  # default
             if ann is not inspect.Parameter.empty:
-                origin = getattr(ann, "__origin__", None)
+                origin = typing.get_origin(ann)
                 if origin is not None:
-                    # handle Optional[X], list[X], etc. — use string fallback
-                    json_type = "string"
+                    # SDK-10 fix: handle generic types properly instead of
+                    # falling back to "string" for everything with __origin__.
+                    args = typing.get_args(ann)
+
+                    if origin is list:
+                        json_type = "array"
+                    elif origin is dict:
+                        json_type = "object"
+                    elif origin in (types.UnionType, typing.Union):
+                        # Optional[X] / X | None → unwrap to inner type
+                        non_none_args = [a for a in args if a is not type(None)]
+                        if len(non_none_args) == 1:
+                            inner = non_none_args[0]
+                            inner_origin = typing.get_origin(inner)
+                            if inner_origin is list:
+                                json_type = "array"
+                            elif inner_origin is dict:
+                                json_type = "object"
+                            else:
+                                json_type = _TYPE_MAP.get(inner, "string")
+                        else:
+                            json_type = "string"
+                    else:
+                        json_type = _TYPE_MAP.get(origin, "string")
                 else:
                     json_type = _TYPE_MAP.get(ann, "string")
 

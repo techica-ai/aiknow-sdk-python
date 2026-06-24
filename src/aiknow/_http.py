@@ -5,7 +5,7 @@ Centralizes error checking so individual resource methods stay DRY.
 """
 from __future__ import annotations
 
-from typing import NoReturn
+from typing import Any, NoReturn, Protocol, runtime_checkable
 
 import httpx
 
@@ -15,6 +15,25 @@ from ._exceptions import (
     AIKnowTimeoutError,
     AuthenticationError,
 )
+
+# Single source of truth for the default base URL (SDK-7 fix).
+# Both sync and async clients import this instead of defining their own copy.
+_DEFAULT_BASE_URL = "http://localhost:8000/api/v1"
+
+
+@runtime_checkable
+class HttpClientLike(Protocol):
+    """Protocol for HTTP clients usable by SDK resources.
+
+    Both httpx.Client and httpx.AsyncClient satisfy this protocol.
+    _PerRequestClient also satisfies it, eliminating type: ignore needs.
+    """
+
+    def get(self, url: str, **kwargs: Any) -> Any: ...
+    def post(self, url: str, **kwargs: Any) -> Any: ...
+    def delete(self, url: str, **kwargs: Any) -> Any: ...
+    def put(self, url: str, **kwargs: Any) -> Any: ...
+    def stream(self, method: str, url: str, **kwargs: Any) -> Any: ...
 
 
 def raise_for_status(label: str, res: httpx.Response) -> None:

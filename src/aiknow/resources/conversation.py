@@ -6,8 +6,32 @@ from __future__ import annotations
 from typing import Any, cast
 
 import httpx
+from pydantic import BaseModel
 
 from .._http import raise_for_status, wrap_httpx_errors
+
+
+class GraphTurnResult(BaseModel):
+    """Typed response from P3 Graph Engine graph_turn."""
+
+    session_id: str
+    message: str
+    outcome: str
+    stop_reason: str
+    is_frozen: bool = False
+    current_node: str | None = None
+    is_delegated: bool = False
+    handoff: dict[str, Any] | None = None
+    features: dict[str, Any] | None = None
+
+
+class ApproveCheckpointResult(BaseModel):
+    """Typed response from approve_checkpoint."""
+
+    session_id: str
+    status: str
+    current_node: str | None = None
+    message: str | None = None
 
 
 class _ConversationResourceBase:
@@ -115,7 +139,7 @@ class ConversationResource(_ConversationResourceBase):
         graph_id: str,
         message: str = "",
         tenant_id: str = "default",
-    ) -> dict[str, Any]:
+    ) -> GraphTurnResult:
         """Process one P3 graph engine turn (sync).
 
         Starts a new session (message="") or advances an existing one.
@@ -127,7 +151,7 @@ class ConversationResource(_ConversationResourceBase):
             tenant_id: Tenant identifier.
 
         Returns:
-            Dictionary with outcome, stop_reason, is_frozen, current_node,
+            GraphTurnResult with outcome, stop_reason, is_frozen, current_node,
             is_delegated, handoff (None if no agent delegation occurred).
 
         Raises:
@@ -144,7 +168,7 @@ class ConversationResource(_ConversationResourceBase):
         except Exception as exc:
             wrap_httpx_errors("Conversation.graph_turn", exc)
         raise_for_status("Conversation.graph_turn", res)
-        return cast(dict[str, Any], res.json())
+        return GraphTurnResult.model_validate(res.json())
 
     def approve_checkpoint(
         self,
@@ -152,7 +176,7 @@ class ConversationResource(_ConversationResourceBase):
         decision: str,
         approver_id: str,
         tenant_id: str = "default",
-    ) -> dict[str, Any]:
+    ) -> ApproveCheckpointResult:
         """Approve or reject a P3 graph checkpoint (sync).
 
         Args:
@@ -162,7 +186,7 @@ class ConversationResource(_ConversationResourceBase):
             tenant_id: Tenant identifier.
 
         Returns:
-            Dictionary with the updated turn result after approval.
+            ApproveCheckpointResult with the updated turn result after approval.
 
         Raises:
             Exception: If the HTTP request fails or session is not frozen.
@@ -178,7 +202,7 @@ class ConversationResource(_ConversationResourceBase):
         except Exception as exc:
             wrap_httpx_errors("Conversation.approve_checkpoint", exc)
         raise_for_status("Conversation.approve_checkpoint", res)
-        return cast(dict[str, Any], res.json())
+        return ApproveCheckpointResult.model_validate(res.json())
 
 
 class AsyncConversationResource(_ConversationResourceBase):
@@ -233,7 +257,7 @@ class AsyncConversationResource(_ConversationResourceBase):
         graph_id: str,
         message: str = "",
         tenant_id: str = "default",
-    ) -> dict[str, Any]:
+    ) -> GraphTurnResult:
         """Process one P3 graph engine turn (async).
 
         Starts a new session (message="") or advances an existing one.
@@ -245,7 +269,7 @@ class AsyncConversationResource(_ConversationResourceBase):
             tenant_id: Tenant identifier.
 
         Returns:
-            Dictionary with outcome, stop_reason, is_frozen, current_node,
+            GraphTurnResult with outcome, stop_reason, is_frozen, current_node,
             is_delegated, handoff (None if no agent delegation occurred).
 
         Raises:
@@ -262,7 +286,7 @@ class AsyncConversationResource(_ConversationResourceBase):
         except Exception as exc:
             wrap_httpx_errors("Conversation.graph_turn", exc)
         raise_for_status("Conversation.graph_turn", res)
-        return cast(dict[str, Any], res.json())
+        return GraphTurnResult.model_validate(res.json())
 
     async def approve_checkpoint(
         self,
@@ -270,7 +294,7 @@ class AsyncConversationResource(_ConversationResourceBase):
         decision: str,
         approver_id: str,
         tenant_id: str = "default",
-    ) -> dict[str, Any]:
+    ) -> ApproveCheckpointResult:
         """Approve or reject a P3 graph checkpoint (async).
 
         Args:
@@ -280,7 +304,7 @@ class AsyncConversationResource(_ConversationResourceBase):
             tenant_id: Tenant identifier.
 
         Returns:
-            Dictionary with the updated turn result after approval.
+            ApproveCheckpointResult with the updated turn result after approval.
 
         Raises:
             Exception: If the HTTP request fails or session is not frozen.
@@ -296,4 +320,4 @@ class AsyncConversationResource(_ConversationResourceBase):
         except Exception as exc:
             wrap_httpx_errors("Conversation.approve_checkpoint", exc)
         raise_for_status("Conversation.approve_checkpoint", res)
-        return cast(dict[str, Any], res.json())
+        return ApproveCheckpointResult.model_validate(res.json())

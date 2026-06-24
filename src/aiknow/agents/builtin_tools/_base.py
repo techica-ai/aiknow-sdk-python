@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 if TYPE_CHECKING:
     from aiknow.agents.builtin_tools._toolbox import BuiltinToolContext
@@ -55,8 +55,11 @@ class BuiltinTool(ABC):
     """
 
     name: str = ""
-    description: dict[str, str] = {}
-    parameters: list[ToolParam] = []
+    # SDK-9 fix: use ClassVar to signal these are meant to be overridden
+    # per-subclass, not mutated at instance level. Mutable shared defaults
+    # ({}, []) are footguns if a subclass ever does self.parameters.append().
+    description: ClassVar[dict[str, str]] = {}
+    parameters: ClassVar[list[ToolParam]] = []
 
     @abstractmethod
     async def execute(

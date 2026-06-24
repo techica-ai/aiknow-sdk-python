@@ -51,14 +51,18 @@ class IngestionResource(_IngestionResourceBase):
     """Synchronous ingestion resource."""
 
     def __init__(self, client: httpx.Client) -> None:
+        self._client = client
+
+    @staticmethod
+    def _warn_deprecated() -> None:
+        """Emit deprecation warning on actual method use, not construction (SDK-8)."""
         import warnings
         warnings.warn(
             "client.ingestion is deprecated and will be removed in v5.0.0. "
             "Use Pipeline API (POST /pipelines) with IngestPipelineConfig instead.",
             DeprecationWarning,
-            stacklevel=2,
+            stacklevel=3,
         )
-        self._client = client
 
     def upload(
         self,
@@ -84,6 +88,7 @@ class IngestionResource(_IngestionResourceBase):
             AIKnowTimeoutError:  if the request times out.
             FileNotFoundError:   if *file_path* does not exist.
         """
+        self._warn_deprecated()
         sid, mime_type, data = self._prepare_upload(file_path, tenant_id, source_id)
         with open(file_path, "rb") as f:
             files = {"file": (_filename(file_path), f, mime_type)}
@@ -99,14 +104,18 @@ class AsyncIngestionResource(_IngestionResourceBase):
     """Asynchronous ingestion resource."""
 
     def __init__(self, client: httpx.AsyncClient) -> None:
+        self._client = client
+
+    @staticmethod
+    def _warn_deprecated() -> None:
+        """Emit deprecation warning on actual method use, not construction (SDK-8)."""
         import warnings
         warnings.warn(
             "client.ingestion is deprecated and will be removed in v5.0.0. "
             "Use Pipeline API (POST /pipelines) with IngestPipelineConfig instead.",
             DeprecationWarning,
-            stacklevel=2,
+            stacklevel=3,
         )
-        self._client = client
 
     async def upload(
         self,
@@ -135,6 +144,7 @@ class AsyncIngestionResource(_IngestionResourceBase):
             AIKnowTimeoutError:  if the request times out.
             FileNotFoundError:   if *file_path* does not exist.
         """
+        self._warn_deprecated()
         sid, mime_type, data = self._prepare_upload(file_path, tenant_id, source_id)
         file_bytes = await asyncio.to_thread(_read_file_bytes, file_path)
         files = {"file": (_filename(file_path), file_bytes, mime_type)}

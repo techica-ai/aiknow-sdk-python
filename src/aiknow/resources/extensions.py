@@ -66,3 +66,33 @@ class AsyncExtensionsResource:
             if isinstance(exc, (httpx.RequestError, httpx.TimeoutException)):
                 wrap_httpx_errors("ExtensionsResource.register_manifest", exc)
             raise
+
+
+class ExtensionsResource:
+    """Sync HTTP resource for registering the AppManifest with the Platform."""
+
+    def __init__(self, client: httpx.Client) -> None:
+        self._client = client
+
+    def register_manifest(self, manifest_dict: dict[str, Any]) -> None:
+        """Upload the full AppManifest to the Platform (sync version).
+
+        Identical to AsyncExtensionsResource.register_manifest but synchronous.
+        Uses self._client.post() instead of await self._client.post().
+        """
+        try:
+            response = self._client.post(
+                "/extensions/manifest",
+                json=manifest_dict,
+            )
+            raise_for_status("ExtensionsResource.register_manifest", response)
+            logger.debug(
+                "Manifest uploaded: %d skills, %d workflows, %d hooks",
+                len(manifest_dict.get("skills", [])),
+                len(manifest_dict.get("workflows", [])),
+                len(manifest_dict.get("hooks", [])),
+            )
+        except Exception as exc:
+            if isinstance(exc, (httpx.RequestError, httpx.TimeoutException)):
+                wrap_httpx_errors("ExtensionsResource.register_manifest", exc)
+            raise

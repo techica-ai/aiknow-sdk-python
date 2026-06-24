@@ -9,14 +9,16 @@ from typing import Any, Self, cast
 import httpx
 
 from ._auth_flow import AIKnowAuth
+from ._http import _DEFAULT_BASE_URL
 from .resources.auth import AuthResource
 from .resources.chat import ChatResource
 from .resources.conversation import ConversationResource
+from .resources.extensions import ExtensionsResource
 from .resources.ingestion import IngestionResource
+from .resources.knowledge import KnowledgeResource
 from .resources.observe import ObserveResource
 from .resources.users import UsersResource
-
-_DEFAULT_BASE_URL = "http://localhost:8000/api/v1"
+from .resources.workflows import WorkflowsResource
 
 
 class AIKnowClient:
@@ -85,6 +87,9 @@ class AIKnowClient:
         self.conversation = ConversationResource(self._client)
         self.ingestion = IngestionResource(self._client)
         self.users = UsersResource(self._client)
+        self.extensions = ExtensionsResource(self._client)
+        self.workflows = WorkflowsResource(self._client)
+        self.knowledge = KnowledgeResource(self._client)
         self.observe: ObserveResource | None = (
             ObserveResource(self._client, resolved_admin_key)
             if resolved_admin_key
