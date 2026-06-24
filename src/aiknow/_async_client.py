@@ -295,16 +295,92 @@ class AsyncAIKnowClient:
 
         # Deserialization logic
         if data_type == "parsed_document":
-            from aiknow_core.common.models.knowledge import ParsedDocument
-            return ParsedDocument.model_validate(data)
+            try:
+                from aiknow_core.common.models.knowledge import ParsedDocument
+                return ParsedDocument.model_validate(data)
+            except ImportError:
+                return data
         elif data_type == "chunks":
-            from aiknow_core.common.models.knowledge import Chunk
-            return [Chunk.model_validate(c) for c in data]
+            try:
+                from aiknow_core.common.models.knowledge import Chunk
+                return [Chunk.model_validate(c) for c in data]
+            except ImportError:
+                return data
         return data
 
     async def list_states(self) -> list[dict[str, Any]]:
         """List all active and persistent states (async)."""
         res = await self._client.get("/pipeline/states")
+        res.raise_for_status()
+        return cast(list[dict[str, Any]], res.json())
+
+    async def embed(self, texts: list[str], model: str = "default") -> list[list[float]]:
+        """Embed a list of text strings (async)."""
+        payload = {"texts": texts, "model": model}
+        res = await self._client.post("/pipeline/embed", json=payload)
+        res.raise_for_status()
+        return cast(list[list[float]], res.json())
+
+    async def embed_chunks(self, state_token: str, model: str = "default") -> dict[str, Any]:
+        """Embed document chunks referenced by a state token (async)."""
+        payload = {"state_token": state_token, "model": model}
+        res = await self._client.post("/pipeline/embed-chunks", json=payload)
+        res.raise_for_status()
+        return cast(dict[str, Any], res.json())
+
+    async def extract(
+        self,
+        text: str,
+        extract_entities: bool = True,
+        extract_relations: bool = True,
+    ) -> dict[str, Any]:
+        """Extract entities and relations from text (async)."""
+        payload = {
+            "text": text,
+            "extract_entities": extract_entities,
+            "extract_relations": extract_relations,
+        }
+        res = await self._client.post("/pipeline/extract", json=payload)
+        res.raise_for_status()
+        return cast(dict[str, Any], res.json())
+
+    async def extract_chunks(
+        self,
+        state_token: str,
+        extract_entities: bool = True,
+        extract_relations: bool = True,
+    ) -> dict[str, Any]:
+        """Extract entities and relations from chunks referenced by state token (async)."""
+        payload = {
+            "state_token": state_token,
+            "extract_entities": extract_entities,
+            "extract_relations": extract_relations,
+        }
+        res = await self._client.post("/pipeline/extract-chunks", json=payload)
+        res.raise_for_status()
+        return cast(dict[str, Any], res.json())
+
+    async def retrieve(
+        self,
+        query: str,
+        strategy: str = "vector",
+        top_k: int = 5,
+        min_score: float | None = None,
+        filters: dict[str, Any] | None = None,
+        vector_weight: float | None = None,
+        keyword_weight: float | None = None,
+    ) -> list[dict[str, Any]]:
+        """Retrieve relevant chunks for a search query (async)."""
+        payload = {
+            "query": query,
+            "strategy": strategy,
+            "top_k": top_k,
+            "min_score": min_score,
+            "filters": filters,
+            "vector_weight": vector_weight,
+            "keyword_weight": keyword_weight,
+        }
+        res = await self._client.post("/pipeline/retrieve", json=payload)
         res.raise_for_status()
         return cast(list[dict[str, Any]], res.json())
 
