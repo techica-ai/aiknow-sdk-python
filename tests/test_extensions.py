@@ -5,19 +5,26 @@ import sys
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Boundary test
 # ---------------------------------------------------------------------------
 
 def test_sdk_extensions_do_not_import_aiknow_core():
     """Importing aiknow.extensions must not pull in aiknow_core."""
-    # Clear any cached imports from previous tests
-    forbidden = [k for k in sys.modules if k.startswith("aiknow_core") or k.startswith("aiknow_adapters")]
-    # We can't un-import, but we can assert the extension module itself
-    # doesn't add aiknow_core when freshly imported
+    # Snapshot forbidden modules before import
+    before = {
+        k for k in sys.modules
+        if k.startswith("aiknow_core") or k.startswith("aiknow_adapters")
+    }
     import aiknow.extensions  # noqa: F401
-    # Extensions should work without aiknow_core being present
+
+    # After import, no NEW forbidden modules should appear
+    after = {
+        k for k in sys.modules
+        if k.startswith("aiknow_core") or k.startswith("aiknow_adapters")
+    }
+    leaked = after - before
+    assert not leaked, f"Extensions leaked core imports: {leaked}"
     assert "aiknow.extensions" in sys.modules
 
 
@@ -131,6 +138,7 @@ def test_skill_result_convenience_constructors():
 def test_step_result_convenience_constructors():
     """SkillResult deprecated alias \u2014 warning fires at module-level access via __getattr__."""
     import warnings
+
     import aiknow.extensions.types as types_mod
 
     with warnings.catch_warnings(record=True) as w:

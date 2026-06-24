@@ -17,10 +17,9 @@ Tests:
 from __future__ import annotations
 
 import json
+
 import pytest
-
 from aiknow_contracts.workflow import WorkflowTriggers
-
 
 # ---------------------------------------------------------------------------
 # Phase 4: @sop triggers

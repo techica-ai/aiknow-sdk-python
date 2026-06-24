@@ -45,8 +45,9 @@ class TestModelFields:
     """Ensure Pydantic models have the expected fields."""
 
     def test_chat_response_has_citations_as_list_of_dict(self):
-        from aiknow import ChatResponse
         import typing
+
+        from aiknow import ChatResponse
         hints = typing.get_type_hints(ChatResponse)
         # citations should be list[dict[str, Any]], not list[str]
         assert hints["citations"] is not str

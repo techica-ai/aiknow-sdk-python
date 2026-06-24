@@ -15,8 +15,7 @@ from __future__ import annotations
 
 import pytest
 from aiknow.agents.base import AgentContext
-from aiknow.agents.builtin_tools import BuiltinToolBox, BuiltinTool, BuiltinToolContext, ToolParam
-
+from aiknow.agents.builtin_tools import BuiltinTool, BuiltinToolBox, BuiltinToolContext
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -193,8 +192,9 @@ async def test_kb_search_missing_query(toolbox, no_client_ctx):
 @pytest.mark.asyncio
 async def test_get_execution_status_uses_ctx(toolbox, rich_ctx):
     """get_execution_status uses in-memory context when execution_id matches."""
-    ctx = BuiltinToolContext(agent_ctx=rich_ctx, http_client=None, tenant_id="acme")
-    result = await toolbox.execute(rich_ctx, "get_execution_status", {"execution_id": "exec-001"})
+    result = await toolbox.execute(
+        rich_ctx, "get_execution_status", {"execution_id": "exec-001"}
+    )
     assert "exec-001" in result
     assert "refund_flow" in result
     assert "running" in result
@@ -280,7 +280,9 @@ async def test_save_agent_note_missing_note(toolbox, rich_ctx):
 @pytest.mark.asyncio
 async def test_format_currency_vnd(toolbox, empty_ctx):
     """format_currency formats VND correctly (no decimal, dot separator)."""
-    result = await toolbox.execute(empty_ctx, "format_currency", {"amount": 1500000, "currency": "VND"})
+    result = await toolbox.execute(
+        empty_ctx, "format_currency", {"amount": 1500000, "currency": "VND"}
+    )
     assert "₫" in result
     assert "1.500.000" in result
 
@@ -288,7 +290,9 @@ async def test_format_currency_vnd(toolbox, empty_ctx):
 @pytest.mark.asyncio
 async def test_format_currency_usd(toolbox, empty_ctx):
     """format_currency formats USD correctly."""
-    result = await toolbox.execute(empty_ctx, "format_currency", {"amount": 99.99, "currency": "USD"})
+    result = await toolbox.execute(
+        empty_ctx, "format_currency", {"amount": 99.99, "currency": "USD"}
+    )
     assert "$" in result
     assert "99.99" in result
 
@@ -323,8 +327,8 @@ async def test_current_datetime_date_only(toolbox, empty_ctx):
 
 def test_executor_resolve_builtin_schemas():
     """BaseAgentExecutor._resolve_tools_schemas() includes builtin tool schemas."""
-    from aiknow.extensions import copilot_agent
     from aiknow.agents.runtime import AgentRuntime
+    from aiknow.extensions import copilot_agent
 
     @copilot_agent(
         name="test_copilot_c",
@@ -349,8 +353,8 @@ def test_executor_resolve_builtin_schemas():
 @pytest.mark.asyncio
 async def test_executor_call_builtin_tool():
     """BaseAgentExecutor._call_tool() dispatches to BuiltinToolBox for builtin tools."""
-    from aiknow.extensions import copilot_agent
     from aiknow.agents.runtime import AgentRuntime
+    from aiknow.extensions import copilot_agent
 
     @copilot_agent(
         name="test_call_builtin",
@@ -366,6 +370,8 @@ async def test_executor_call_builtin_tool():
     executor = entry.executor
 
     ctx = AgentContext(tenant_id="acme")
-    result = await executor._call_tool(ctx, "format_currency", {"amount": 500000, "currency": "VND"})
+    result = await executor._call_tool(
+        ctx, "format_currency", {"amount": 500000, "currency": "VND"}
+    )
     assert "₫" in result
     assert "500.000" in result

@@ -5,9 +5,16 @@ import sys
 
 
 def test_public_api_importable():
-    from aiknow import AiknowApp, HookEvent, AppSkillDeps, SkillResult
-    from aiknow import skill, sop, hook, parser
-    from aiknow import AIKnowClient, AsyncAIKnowClient
+    from aiknow import (
+        AiknowApp,
+        AppSkillDeps,
+        HookEvent,
+        SkillResult,
+        hook,
+        parser,
+        skill,
+        sop,
+    )
 
     assert AiknowApp is not None
     assert skill is not None
@@ -27,7 +34,6 @@ def test_aiknow_core_not_in_sdk_modules():
     # but aiknow.extensions itself must not import it
     assert "aiknow.extensions._decorators" in sys.modules
     # The key invariant: extensions module has no direct import of aiknow_core
-    import importlib
     import inspect
     src = inspect.getsource(sys.modules["aiknow.extensions._decorators"])
     assert "aiknow_core" not in src

@@ -3,12 +3,9 @@ Tests for AIKnowClient and AsyncAIKnowClient initialization.
 """
 from __future__ import annotations
 
-import os
-
 import pytest
-
 from aiknow import AIKnowClient, AsyncAIKnowClient
-from aiknow.resources.observe import ObserveResource, AsyncObserveResource
+from aiknow.resources.observe import AsyncObserveResource, ObserveResource
 
 
 class TestClientInit:

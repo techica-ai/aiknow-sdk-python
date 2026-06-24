@@ -3,11 +3,11 @@ Tests for SDK retry / resilience behavior using httpx transport mocking.
 """
 from __future__ import annotations
 
-import pytest
-import httpx
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
-from aiknow import AIKnowClient, AsyncAIKnowClient, AIKnowConnectionError, AIKnowTimeoutError
+import httpx
+import pytest
+from aiknow import AIKnowClient, AsyncAIKnowClient
 
 
 class TestPingRobustness:
@@ -26,11 +26,17 @@ class TestPingRobustness:
     @pytest.mark.asyncio
     async def test_async_ping_returns_false_on_connection_error(self):
         async with AsyncAIKnowClient(api_key="k") as client:
-            with patch.object(client._client, "get", new_callable=AsyncMock, side_effect=httpx.ConnectError("refused")):
+            err = httpx.ConnectError("refused")
+            with patch.object(
+                client._client, "get", new_callable=AsyncMock, side_effect=err
+            ):
                 assert await client.ping() is False
 
     @pytest.mark.asyncio
     async def test_async_ping_returns_false_on_timeout(self):
         async with AsyncAIKnowClient(api_key="k") as client:
-            with patch.object(client._client, "get", new_callable=AsyncMock, side_effect=httpx.TimeoutException("timeout")):
+            err = httpx.TimeoutException("timeout")
+            with patch.object(
+                client._client, "get", new_callable=AsyncMock, side_effect=err
+            ):
                 assert await client.ping() is False

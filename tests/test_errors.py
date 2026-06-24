@@ -3,17 +3,17 @@ Tests for SDK exception hierarchy and HTTP error mapping.
 """
 from __future__ import annotations
 
-import pytest
-import httpx
 from unittest.mock import MagicMock
 
+import httpx
+import pytest
 from aiknow import (
     AIKnowAPIError,
     AIKnowConnectionError,
     AIKnowTimeoutError,
     AuthenticationError,
 )
-from aiknow._http import raise_for_status, wrap_httpx_errors
+from aiknow._http import raise_for_status
 
 
 def _mock_response(status_code: int, text: str = "") -> httpx.Response:

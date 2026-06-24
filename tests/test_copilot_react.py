@@ -311,7 +311,7 @@ class TestCopilotStreaming:
         """LLM raises mid-stream → error text in TextMessageContent."""
         async def mock_stream(msgs, schemas):
             raise RuntimeError("LLM is down")
-            yield  # noqa: unreachable — make it an async generator
+            yield  # type: ignore[unreachable]
 
         with patch.object(
             copilot_executor, "_llm_stream", side_effect=mock_stream

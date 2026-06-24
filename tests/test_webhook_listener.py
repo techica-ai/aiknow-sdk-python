@@ -13,16 +13,14 @@ import hashlib
 import hmac
 import json
 
+import httpx
 import pytest
 import pytest_asyncio
-import httpx
-
 from aiknow._hmac import SignatureVerificationError, verify_signature
-from aiknow._skill_dispatcher import SkillDispatcher, SkillInvocationResponse
+from aiknow._skill_dispatcher import SkillDispatcher
 from aiknow.extensions._local_registry import ExtensionEntry, LocalExtensionRegistry
 from aiknow.extensions.types import AppSkillDeps, HookEvent, SkillResult
 from aiknow.webhook_listener import WebhookListener
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

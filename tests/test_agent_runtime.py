@@ -13,18 +13,16 @@ Coverage:
 from __future__ import annotations
 
 import pytest
-
 from aiknow.agents.base import AgentContext, AgentMeta, ToolMeta
 from aiknow.agents.context_providers import (
+    BUILTIN_PROVIDERS,
     ContextProvider,
     ExecutionStateProvider,
     SessionInfoProvider,
-    BUILTIN_PROVIDERS,
 )
-from aiknow.agents.tool_registry import AppToolRegistry
 from aiknow.agents.runtime import AgentRuntime
-from aiknow.extensions import tool, copilot_agent, rag_agent, autonomous_agent
-
+from aiknow.agents.tool_registry import AppToolRegistry
+from aiknow.extensions import autonomous_agent, copilot_agent, rag_agent, tool
 
 # ---------------------------------------------------------------------------
 # Fixtures
