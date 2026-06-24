@@ -20,6 +20,7 @@ class GraphTurnResult(BaseModel):
     stop_reason: str
     is_frozen: bool = False
     current_node: str | None = None
+    current_graph_id: str | None = None
     is_delegated: bool = False
     handoff: dict[str, Any] | None = None
     features: dict[str, Any] | None = None
