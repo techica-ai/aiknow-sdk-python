@@ -10,6 +10,7 @@ from typing import Any
 
 import httpx
 from aiknow_contracts.documents import DocumentResponse
+from aiknow_contracts.jobs import JobStatusResponse
 
 from .._http import raise_for_status, wrap_httpx_errors
 
@@ -99,6 +100,57 @@ class IngestionResource(_IngestionResourceBase):
         raise_for_status("Ingestion.upload", res)
         return self._parse_upload_response(res.json())
 
+    def get_job(
+        self, job_id: str, tenant_id: str,
+    ) -> JobStatusResponse:
+        """Get ingestion job status by ID (sync).
+
+        Args:
+            job_id: Job identifier.
+            tenant_id: Tenant identifier for data isolation.
+
+        Returns:
+            JobStatusResponse with status, progress, and metadata.
+        """
+        params = {"tenant_id": tenant_id}
+        try:
+            res = self._client.get(f"/jobs/{job_id}", params=params)
+        except Exception as exc:
+            wrap_httpx_errors("Ingestion.get_job", exc)
+        raise_for_status("Ingestion.get_job", res)
+        return JobStatusResponse.model_validate(res.json())
+
+    def list_jobs(
+        self,
+        tenant_id: str,
+        status_filter: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[JobStatusResponse]:
+        """List ingestion jobs for a tenant (sync).
+
+        Args:
+            tenant_id: Tenant identifier.
+            status_filter: Optional status filter (pending, processing,
+                           completed, failed).
+            limit: Maximum number of results.
+            offset: Pagination offset.
+
+        Returns:
+            List of JobStatusResponse items.
+        """
+        params: dict[str, Any] = {
+            "tenant_id": tenant_id, "limit": limit, "offset": offset,
+        }
+        if status_filter:
+            params["status"] = status_filter
+        try:
+            res = self._client.get("/jobs", params=params)
+        except Exception as exc:
+            wrap_httpx_errors("Ingestion.list_jobs", exc)
+        raise_for_status("Ingestion.list_jobs", res)
+        return [JobStatusResponse.model_validate(j) for j in res.json()]
+
 
 class AsyncIngestionResource(_IngestionResourceBase):
     """Asynchronous ingestion resource."""
@@ -154,3 +206,54 @@ class AsyncIngestionResource(_IngestionResourceBase):
             wrap_httpx_errors("Ingestion.upload", exc)
         raise_for_status("Ingestion.upload", res)
         return self._parse_upload_response(res.json())
+
+    async def get_job(
+        self, job_id: str, tenant_id: str,
+    ) -> JobStatusResponse:
+        """Get ingestion job status by ID (async).
+
+        Args:
+            job_id: Job identifier.
+            tenant_id: Tenant identifier for data isolation.
+
+        Returns:
+            JobStatusResponse with status, progress, and metadata.
+        """
+        params = {"tenant_id": tenant_id}
+        try:
+            res = await self._client.get(f"/jobs/{job_id}", params=params)
+        except Exception as exc:
+            wrap_httpx_errors("Ingestion.get_job", exc)
+        raise_for_status("Ingestion.get_job", res)
+        return JobStatusResponse.model_validate(res.json())
+
+    async def list_jobs(
+        self,
+        tenant_id: str,
+        status_filter: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[JobStatusResponse]:
+        """List ingestion jobs for a tenant (async).
+
+        Args:
+            tenant_id: Tenant identifier.
+            status_filter: Optional status filter (pending, processing,
+                           completed, failed).
+            limit: Maximum number of results.
+            offset: Pagination offset.
+
+        Returns:
+            List of JobStatusResponse items.
+        """
+        params: dict[str, Any] = {
+            "tenant_id": tenant_id, "limit": limit, "offset": offset,
+        }
+        if status_filter:
+            params["status"] = status_filter
+        try:
+            res = await self._client.get("/jobs", params=params)
+        except Exception as exc:
+            wrap_httpx_errors("Ingestion.list_jobs", exc)
+        raise_for_status("Ingestion.list_jobs", res)
+        return [JobStatusResponse.model_validate(j) for j in res.json()]

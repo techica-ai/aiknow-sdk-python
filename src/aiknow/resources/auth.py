@@ -137,6 +137,65 @@ class AuthResource(_AuthResourceBase):
         raise_for_status("Auth.logout_all", res)
         return cast(dict[str, Any], res.json())
 
+    def register_tenant(
+        self,
+        slug: str,
+        name: str,
+        owner_email: str,
+        owner_password: str,
+        owner_full_name: str | None = None,
+    ) -> dict[str, Any]:
+        """Register a new tenant + owner account (sync).
+
+        Returns 202 Accepted with tenant_id, status, and poll_url.
+        Use ``register_status()`` to poll provisioning progress.
+
+        Args:
+            slug: Tenant slug — lowercase alphanumeric + hyphens, 3–64 chars.
+            name: Display name of the tenant (2–255 chars).
+            owner_email: Email for the initial admin (owner) account.
+            owner_password: Password for the owner account (min 8 chars).
+            owner_full_name: Optional full name for the owner.
+
+        Returns:
+            Dict with ``tenant_id``, ``status``, ``message``, ``poll_url``.
+        """
+        payload: dict[str, Any] = {
+            "slug": slug,
+            "name": name,
+            "owner_email": owner_email,
+            "owner_password": owner_password,
+        }
+        if owner_full_name is not None:
+            payload["owner_full_name"] = owner_full_name
+        try:
+            res = self._sdk_client._raw_client.post(
+                "/auth/register/tenant", json=payload,
+            )
+        except Exception as exc:
+            wrap_httpx_errors("Auth.register_tenant", exc)
+        raise_for_status("Auth.register_tenant", res)
+        return cast(dict[str, Any], res.json())
+
+    def register_status(self, tenant_id: str) -> dict[str, Any]:
+        """Poll tenant provisioning status (sync).
+
+        Args:
+            tenant_id: Tenant ID returned from ``register_tenant()``.
+
+        Returns:
+            Dict with ``tenant_id``, ``status``, ``provisioning_step``,
+            ``last_failed_step``, ``retry_count``, ``activated_at``.
+        """
+        try:
+            res = self._sdk_client._raw_client.get(
+                f"/auth/register/status/{tenant_id}",
+            )
+        except Exception as exc:
+            wrap_httpx_errors("Auth.register_status", exc)
+        raise_for_status("Auth.register_status", res)
+        return cast(dict[str, Any], res.json())
+
 
 class AsyncAuthResource(_AuthResourceBase):
     """Asynchronous authentication resource."""
@@ -233,4 +292,63 @@ class AsyncAuthResource(_AuthResourceBase):
         
         self._clear_tokens()
         raise_for_status("Auth.logout_all", res)
+        return cast(dict[str, Any], res.json())
+
+    async def register_tenant(
+        self,
+        slug: str,
+        name: str,
+        owner_email: str,
+        owner_password: str,
+        owner_full_name: str | None = None,
+    ) -> dict[str, Any]:
+        """Register a new tenant + owner account (async).
+
+        Returns 202 Accepted with tenant_id, status, and poll_url.
+        Use ``register_status()`` to poll provisioning progress.
+
+        Args:
+            slug: Tenant slug — lowercase alphanumeric + hyphens, 3–64 chars.
+            name: Display name of the tenant (2–255 chars).
+            owner_email: Email for the initial admin (owner) account.
+            owner_password: Password for the owner account (min 8 chars).
+            owner_full_name: Optional full name for the owner.
+
+        Returns:
+            Dict with ``tenant_id``, ``status``, ``message``, ``poll_url``.
+        """
+        payload: dict[str, Any] = {
+            "slug": slug,
+            "name": name,
+            "owner_email": owner_email,
+            "owner_password": owner_password,
+        }
+        if owner_full_name is not None:
+            payload["owner_full_name"] = owner_full_name
+        try:
+            res = await self._sdk_client._raw_client.post(
+                "/auth/register/tenant", json=payload,
+            )
+        except Exception as exc:
+            wrap_httpx_errors("Auth.register_tenant", exc)
+        raise_for_status("Auth.register_tenant", res)
+        return cast(dict[str, Any], res.json())
+
+    async def register_status(self, tenant_id: str) -> dict[str, Any]:
+        """Poll tenant provisioning status (async).
+
+        Args:
+            tenant_id: Tenant ID returned from ``register_tenant()``.
+
+        Returns:
+            Dict with ``tenant_id``, ``status``, ``provisioning_step``,
+            ``last_failed_step``, ``retry_count``, ``activated_at``.
+        """
+        try:
+            res = await self._sdk_client._raw_client.get(
+                f"/auth/register/status/{tenant_id}",
+            )
+        except Exception as exc:
+            wrap_httpx_errors("Auth.register_status", exc)
+        raise_for_status("Auth.register_status", res)
         return cast(dict[str, Any], res.json())
