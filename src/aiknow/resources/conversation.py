@@ -254,11 +254,12 @@ class ConversationResource(_ConversationResourceBase):
         data = res.json()
         return cast(list[dict[str, Any]], data.get("sessions", []))
 
-    def get_session(self, session_id: str) -> dict[str, Any]:
+    def get_session(self, session_id: str, tenant_id: str = "default") -> dict[str, Any]:
         """Get full session detail (sync).
 
         Args:
             session_id: Session identifier.
+            tenant_id: Tenant identifier.
 
         Returns:
             Full session state dict.
@@ -267,7 +268,10 @@ class ConversationResource(_ConversationResourceBase):
             Exception: If the HTTP request fails or session is not found.
         """
         try:
-            res = self._client.get(f"/conversation/sessions/{session_id}")
+            res = self._client.get(
+                f"/conversation/sessions/{session_id}",
+                params={"tenant_id": tenant_id},
+            )
         except Exception as exc:
             wrap_httpx_errors("Conversation.get_session", exc)
         raise_for_status("Conversation.get_session", res)
@@ -441,11 +445,12 @@ class AsyncConversationResource(_ConversationResourceBase):
         data = res.json()
         return cast(list[dict[str, Any]], data.get("sessions", []))
 
-    async def get_session(self, session_id: str) -> dict[str, Any]:
+    async def get_session(self, session_id: str, tenant_id: str = "default") -> dict[str, Any]:
         """Get full session detail (async).
 
         Args:
             session_id: Session identifier.
+            tenant_id: Tenant identifier.
 
         Returns:
             Full session state dict.
@@ -454,7 +459,10 @@ class AsyncConversationResource(_ConversationResourceBase):
             Exception: If the HTTP request fails or session is not found.
         """
         try:
-            res = await self._client.get(f"/conversation/sessions/{session_id}")
+            res = await self._client.get(
+                f"/conversation/sessions/{session_id}",
+                params={"tenant_id": tenant_id},
+            )
         except Exception as exc:
             wrap_httpx_errors("Conversation.get_session", exc)
         raise_for_status("Conversation.get_session", res)
