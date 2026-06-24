@@ -11,6 +11,17 @@ from pydantic import BaseModel
 from .._http import raise_for_status, wrap_httpx_errors
 
 
+class HandoffInfo(BaseModel):
+    """Delegation info for a DELEGATE_TO_AGENT handoff.
+
+    Shared across API, SDK, and BFF to prevent contract drift.
+    """
+
+    from_pillar: str
+    to_pillar: str
+    context_payload: dict[str, Any] = {}
+
+
 class GraphTurnResult(BaseModel):
     """Typed response from P3 Graph Engine graph_turn."""
 
@@ -22,8 +33,8 @@ class GraphTurnResult(BaseModel):
     current_node: str | None = None
     current_graph_id: str | None = None
     is_delegated: bool = False
-    handoff: dict[str, Any] | None = None
-    features: dict[str, Any] | None = None
+    handoff: HandoffInfo | None = None
+    features: dict[str, Any] = {}
 
 
 class ApproveCheckpointResult(BaseModel):
