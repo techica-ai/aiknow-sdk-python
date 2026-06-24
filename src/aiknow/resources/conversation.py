@@ -127,7 +127,8 @@ class ConversationResource(_ConversationResourceBase):
             tenant_id: Tenant identifier.
 
         Returns:
-            Dictionary with outcome, stop_reason, is_frozen, current_node, etc.
+            Dictionary with outcome, stop_reason, is_frozen, current_node,
+            is_delegated, handoff (None if no agent delegation occurred).
 
         Raises:
             Exception: If the HTTP request fails.
@@ -244,7 +245,8 @@ class AsyncConversationResource(_ConversationResourceBase):
             tenant_id: Tenant identifier.
 
         Returns:
-            Dictionary with outcome, stop_reason, is_frozen, current_node, etc.
+            Dictionary with outcome, stop_reason, is_frozen, current_node,
+            is_delegated, handoff (None if no agent delegation occurred).
 
         Raises:
             Exception: If the HTTP request fails.
