@@ -13,7 +13,7 @@ Architecture:
         │  POST /conversation
         ▼
     Platform ConversationAPI
-        │  WorkflowContext + UIHints
+        │  GraphState + UIHints
         ▼
     ConversationTurn
         │  StateSnapshot + TextMessage events
@@ -22,7 +22,7 @@ Architecture:
 
 Design:
   - One-to-one mapping: AG-UI ``threadId`` → Platform ``session_id``.
-  - ``StateSnapshot`` carries WorkflowContext + UIHints for real-time slot UI.
+  - ``StateSnapshot`` carries GraphState + UIHints for real-time node UI.
   - Full SSE event sequence: RunStarted → TextMessageStarted → TextMessageContent
     → TextMessageEnd → StateSnapshot → RunFinished.
   - No local LLM call — all intelligence is in the Platform.
@@ -64,7 +64,7 @@ class AIKnowConversationAgent:
         TextMessageStarted
         TextMessageContent  (full text, not streamed — Platform is synchronous)
         TextMessageEnd
-        StateSnapshot       (workflowContext + uiHints + sessionState)
+        StateSnapshot       (graphState + uiHints + sessionState)
         RunFinished
 
     Args:
@@ -191,8 +191,10 @@ class AIKnowConversationAgent:
                 "session_id": session_id,
                 "turn_id": str(uuid.uuid4()),
                 "message": f"Xin lỗi, không thể kết nối với hệ thống. ({exc})",
-                "session_state": "idle",
-                "workflow_context": None,
+                "session_state": "ended",
+                "current_node": None,
+                "current_graph_id": None,
+                "outcome": "error",
                 "ui_hints": None,
             }
 
@@ -267,8 +269,10 @@ class AIKnowConversationAgent:
 
             {
               session_id: str,
-              session_state: "idle" | "in_workflow" | "in_conversation",
-              workflow_context: WorkflowContext | null,
+              session_state: "idle" | "in_graph" | "waiting" | "frozen" | "ended",
+              current_node: str | null,
+              current_graph_id: str | null,
+              outcome: str | null,
               ui_hints: UIHints | null,
             }
 
@@ -283,7 +287,9 @@ class AIKnowConversationAgent:
         return {
             "session_id": session_id,
             "session_state": turn.get("session_state", "idle"),
-            "workflow_context": turn.get("workflow_context"),
+            "current_node": turn.get("current_node"),
+            "current_graph_id": turn.get("current_graph_id"),
+            "outcome": turn.get("outcome"),
             "ui_hints": turn.get("ui_hints"),
         }
 
