@@ -9,6 +9,8 @@ from typing import Any, Self, cast
 
 import httpx
 
+from aiknow_contracts.knowledge import Chunk, ParsedDocument
+
 from ._auth_flow import AIKnowAuth
 from ._http import _DEFAULT_BASE_URL
 from ._span_builder import SpanBuilder as SpanBuilder  # re-export
@@ -295,17 +297,9 @@ class AsyncAIKnowClient:
 
         # Deserialization logic
         if data_type == "parsed_document":
-            try:
-                from aiknow_core.common.models.knowledge import ParsedDocument
-                return ParsedDocument.model_validate(data)
-            except ImportError:
-                return data
+            return ParsedDocument.model_validate(data)
         elif data_type == "chunks":
-            try:
-                from aiknow_core.common.models.knowledge import Chunk
-                return [Chunk.model_validate(c) for c in data]
-            except ImportError:
-                return data
+            return [Chunk.model_validate(c) for c in data]
         return data
 
     async def list_states(self) -> list[dict[str, Any]]:
