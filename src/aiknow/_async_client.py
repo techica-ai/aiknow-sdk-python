@@ -28,6 +28,7 @@ from .resources.graphs import AsyncGraphsResource
 from .resources.ai import AsyncAiResource
 from .resources.kv_store import AsyncKVStoreResource
 from .resources.consumer_vector import AsyncConsumerVectorResource
+from .resources.prompt_configs import AsyncPromptConfigResource
 
 # ---------------------------------------------------------------------------
 # Shared HTTP transport singleton
@@ -170,6 +171,7 @@ class AsyncAIKnowClient:
         self.ai = AsyncAiResource(self._client)
         self.kv = AsyncKVStoreResource(self._client)
         self.consumer_vector = AsyncConsumerVectorResource(self._client)
+        self.prompt_configs = AsyncPromptConfigResource(self._client)
 
     def set_tenant_id(self, tenant_id: str) -> None:
         """Set or update the default ``X-Tenant-Id`` header.

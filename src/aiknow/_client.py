@@ -22,6 +22,7 @@ from .resources.observe import ObserveResource
 from .resources.users import UsersResource
 from .resources.workflows import WorkflowsResource
 from .resources.graphs import GraphsResource
+from .resources.prompt_configs import PromptConfigResource
 
 
 class AIKnowClient:
@@ -99,6 +100,7 @@ class AIKnowClient:
             if resolved_admin_key
             else None
         )
+        self.prompt_configs = PromptConfigResource(self._client)
 
     def set_tenant_id(self, tenant_id: str) -> None:
         """Set or update the default ``X-Tenant-Id`` header.
