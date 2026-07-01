@@ -21,6 +21,8 @@ from typing import Any
 
 import httpx
 
+from .._http import raise_for_status
+
 from aiknow_contracts.primitives import (
     ClassificationRequest,
     ClassificationResponse,
@@ -90,9 +92,9 @@ class AsyncAiResource:
         )
         resp = await self._http.post(
             "/api/v1/ai/extract",
-            json=request.model_dump(exclude_none=True),
+            json=request.model_dump(exclude_none=True, by_alias=True),
         )
-        resp.raise_for_status()
+        raise_for_status("ai", resp)
         return ExtractionResponse.model_validate(resp.json())
 
     async def classify(
@@ -122,9 +124,9 @@ class AsyncAiResource:
         )
         resp = await self._http.post(
             "/api/v1/ai/classify",
-            json=request.model_dump(exclude_none=True),
+            json=request.model_dump(exclude_none=True, by_alias=True),
         )
-        resp.raise_for_status()
+        raise_for_status("ai", resp)
         return ClassificationResponse.model_validate(resp.json())
 
     async def evaluate(
@@ -158,9 +160,9 @@ class AsyncAiResource:
         )
         resp = await self._http.post(
             "/api/v1/ai/evaluate",
-            json=request.model_dump(exclude_none=True),
+            json=request.model_dump(exclude_none=True, by_alias=True),
         )
-        resp.raise_for_status()
+        raise_for_status("ai", resp)
         return EvaluationResponse.model_validate(resp.json())
 
     async def generate(
@@ -197,9 +199,9 @@ class AsyncAiResource:
         )
         resp = await self._http.post(
             "/api/v1/ai/generate",
-            json=request.model_dump(exclude_none=True),
+            json=request.model_dump(exclude_none=True, by_alias=True),
         )
-        resp.raise_for_status()
+        raise_for_status("ai", resp)
         return GenerationResponse.model_validate(resp.json())
 
     async def similarity(
@@ -224,7 +226,7 @@ class AsyncAiResource:
         request = SimilarityRequest(text_a=text_a, text_b=text_b, model=model)
         resp = await self._http.post(
             "/api/v1/embedding/similarity",
-            json=request.model_dump(exclude_none=True),
+            json=request.model_dump(exclude_none=True, by_alias=True),
         )
-        resp.raise_for_status()
+        raise_for_status("ai", resp)
         return SimilarityResponse.model_validate(resp.json())

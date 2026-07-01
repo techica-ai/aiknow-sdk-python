@@ -14,7 +14,7 @@ from aiknow_contracts.prompt_config import PromptConfig, PromptConfigCreate, Pro
 
 logger = logging.getLogger(__name__)
 
-_BASE_PATH = "/api/v1/prompt-configs"
+_BASE_PATH = "/api/v1/prompt-configs/"
 
 
 class AsyncPromptConfigResource:

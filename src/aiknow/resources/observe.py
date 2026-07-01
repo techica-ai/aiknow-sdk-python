@@ -38,7 +38,7 @@ from aiknow_contracts.vector import (
 
 from .._http import raise_for_status, wrap_httpx_errors
 
-_BASE = "/observe"
+_BASE = "/api/v1/observe"
 
 
 def _build_params(base: dict[str, Any], optional: list[tuple[str, Any]]) -> dict[str, Any]:

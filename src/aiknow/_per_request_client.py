@@ -73,9 +73,21 @@ class _PerRequestClient:
         kwargs["headers"] = self._merge(kwargs.pop("headers", None))
         return await self._client.post(url, **kwargs)
 
-    async def delete(self, url: str, **kwargs: Any) -> httpx.Response:
+    async def delete(self, url: str, **kwargs: Any) -\u003e httpx.Response:
         kwargs["headers"] = self._merge(kwargs.pop("headers", None))
         return await self._client.delete(url, **kwargs)
+
+    async def put(self, url: str, **kwargs: Any) -\u003e httpx.Response:
+        kwargs["headers"] = self._merge(kwargs.pop("headers", None))
+        return await self._client.put(url, **kwargs)
+
+    async def patch(self, url: str, **kwargs: Any) -\u003e httpx.Response:
+        kwargs["headers"] = self._merge(kwargs.pop("headers", None))
+        return await self._client.patch(url, **kwargs)
+
+    async def head(self, url: str, **kwargs: Any) -\u003e httpx.Response:
+        kwargs["headers"] = self._merge(kwargs.pop("headers", None))
+        return await self._client.head(url, **kwargs)
 
     def stream(
         self,

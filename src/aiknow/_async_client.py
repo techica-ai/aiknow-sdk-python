@@ -223,7 +223,7 @@ class AsyncAIKnowClient:
         """
         payload = {**trace, "spans": spans}
         try:
-            res = await self._client.post("/observe/push", json=payload)
+            res = await self._client.post("/api/v1/observe/push", json=payload)
             res.raise_for_status()
             return cast(dict[str, Any], res.json())
         except Exception as exc:
@@ -442,6 +442,12 @@ class AsyncAIKnowClient:
         instance.observe = None    # Admin key required — dùng get_admin_client() riêng
         instance.auth = None  # type: ignore[assignment]
         instance._auth_flow = None  # type: ignore[assignment]
+        
+        # Add new resources
+        instance.ai = AsyncAiResource(per_req)                  # type: ignore[arg-type]
+        instance.kv_store = AsyncKVStoreResource(per_req)       # type: ignore[arg-type]
+        instance.consumer_vector = AsyncConsumerVectorResource(per_req) # type: ignore[arg-type]
+        instance.prompt_configs = AsyncPromptConfigResource(per_req)    # type: ignore[arg-type]
         instance._client = per_req      # type: ignore[assignment]
         instance._raw_client = per_req  # type: ignore[assignment]
 
