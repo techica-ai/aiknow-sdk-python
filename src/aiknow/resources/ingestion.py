@@ -34,13 +34,17 @@ class _IngestionResourceBase:
         file_path: str,
         tenant_id: str,
         source_id: str | None = None,
+        pipeline_config: dict | None = None,
     ) -> tuple[str, str, dict[str, str]]:
         """Prepare the upload payload and metadata."""
+        import json
         import mimetypes
         sid = source_id or str(uuid.uuid4())
         mime_type, _ = mimetypes.guess_type(file_path)
         mime_type = mime_type or "application/octet-stream"
         data = {"tenant_id": tenant_id, "source_id": sid}
+        if pipeline_config is not None:
+            data["pipeline_config_json"] = json.dumps(pipeline_config)
         return sid, mime_type, data
 
     def _parse_upload_response(self, response_json: Any) -> DocumentResponse:
@@ -70,6 +74,7 @@ class IngestionResource(_IngestionResourceBase):
         file_path: str,
         tenant_id: str,
         source_id: str | None = None,
+        pipeline_config: dict | None = None,
     ) -> DocumentResponse:
         """Upload a document for ingestion processing (sync).
 
@@ -90,7 +95,9 @@ class IngestionResource(_IngestionResourceBase):
             FileNotFoundError:   if *file_path* does not exist.
         """
         self._warn_deprecated()
-        sid, mime_type, data = self._prepare_upload(file_path, tenant_id, source_id)
+        sid, mime_type, data = self._prepare_upload(
+            file_path, tenant_id, source_id, pipeline_config
+        )
         with open(file_path, "rb") as f:
             files = {"file": (_filename(file_path), f, mime_type)}
             try:
@@ -174,6 +181,7 @@ class AsyncIngestionResource(_IngestionResourceBase):
         file_path: str,
         tenant_id: str,
         source_id: str | None = None,
+        pipeline_config: dict | None = None,
     ) -> DocumentResponse:
         """Upload a document for ingestion processing (async).
 
@@ -197,7 +205,9 @@ class AsyncIngestionResource(_IngestionResourceBase):
             FileNotFoundError:   if *file_path* does not exist.
         """
         self._warn_deprecated()
-        sid, mime_type, data = self._prepare_upload(file_path, tenant_id, source_id)
+        sid, mime_type, data = self._prepare_upload(
+            file_path, tenant_id, source_id, pipeline_config
+        )
         file_bytes = await asyncio.to_thread(_read_file_bytes, file_path)
         files = {"file": (_filename(file_path), file_bytes, mime_type)}
         try:
