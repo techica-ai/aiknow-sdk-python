@@ -25,6 +25,9 @@ from .resources.observe import AsyncObserveResource
 from .resources.users import AsyncUsersResource
 from .resources.workflows import AsyncWorkflowsResource
 from .resources.graphs import AsyncGraphsResource
+from .resources.ai import AsyncAiResource
+from .resources.kv_store import AsyncKVStoreResource
+from .resources.consumer_vector import AsyncConsumerVectorResource
 
 # ---------------------------------------------------------------------------
 # Shared HTTP transport singleton
@@ -163,6 +166,10 @@ class AsyncAIKnowClient:
             if resolved_admin_key
             else None
         )
+        # Phase 1 SPCC consumer resources
+        self.ai = AsyncAiResource(self._client)
+        self.kv = AsyncKVStoreResource(self._client)
+        self.consumer_vector = AsyncConsumerVectorResource(self._client)
 
     def set_tenant_id(self, tenant_id: str) -> None:
         """Set or update the default ``X-Tenant-Id`` header.
