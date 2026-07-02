@@ -6,6 +6,7 @@ extend this base class.
 """
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, cast
 
@@ -71,7 +72,7 @@ class BaseAgentExecutor(ABC):
         Returns:
             AgentContext populated from state fields.
         """
-        from aiknow.agents.base import AgentContext
+        from aiknow.agents.base import AgentContext  # noqa: PLC0415
 
         state: dict[str, Any] = body.get("state") or {}
 
@@ -126,7 +127,6 @@ class BaseAgentExecutor(ABC):
 
         Checks built-in toolbox first, then app-level registry.
         """
-        import json
 
         # Try built-in tool first
         if self._toolbox and self._toolbox.get(tool_name):
@@ -138,7 +138,7 @@ class BaseAgentExecutor(ABC):
             return f"[Tool '{tool_name}' not found]"
 
         try:
-            from aiknow.extensions.types import StepDeps
+            from aiknow.extensions.types import StepDeps  # noqa: PLC0415
             deps = StepDeps(
                 tenant_id=ctx.tenant_id,
                 locale=ctx.locale,

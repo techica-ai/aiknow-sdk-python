@@ -8,6 +8,7 @@ BuiltinToolContext is the infra-access object passed to each tool's execute().
 """
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
@@ -148,7 +149,6 @@ class BuiltinToolBox:
         Returns:
             Tool result as string.
         """
-        import json
 
         tool = self._tools.get(tool_name)
         if tool is None:
@@ -208,7 +208,7 @@ class BuiltinToolBox:
                 logger.warning("BuiltinToolBox: unknown tool '%s'.", name)
                 continue
             try:
-                import importlib
+                import importlib  # noqa: PLC0415
                 mod = importlib.import_module(module_path)
                 # Convention: module exports a class named after CamelCase of tool name
                 class_name = "".join(w.capitalize() for w in name.split("_")) + "Tool"

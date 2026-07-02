@@ -423,7 +423,7 @@ class WebhookListener:
             )
 
             # Build StepDeps and call the tool function
-            from aiknow.extensions.types import StepDeps
+            from aiknow.extensions.types import StepDeps  # noqa: PLC0415
             deps = StepDeps(
                 tenant_id=payload.tenant_id,
                 session_id=payload.session_id,
@@ -433,7 +433,7 @@ class WebhookListener:
             )
 
             try:
-                import json as _json
+                import json as _json  # noqa: PLC0415
                 result = await fn(deps, **payload.params)
                 if not isinstance(result, str):
                     result = _json.dumps(result, ensure_ascii=False, default=str)

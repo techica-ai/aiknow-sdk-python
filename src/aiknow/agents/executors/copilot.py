@@ -26,6 +26,8 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import Any
 
+from starlette.responses import StreamingResponse
+
 from aiknow.agents.executors.base import BaseAgentExecutor
 
 logger = logging.getLogger(__name__)
@@ -47,7 +49,6 @@ class CopilotAgentExecutor(BaseAgentExecutor):
         Returns:
             StreamingResponse with SSE content-type.
         """
-        from starlette.responses import StreamingResponse
 
         ctx = self._extract_context(body)
         messages: list[dict[str, Any]] = body.get("messages", [])
@@ -226,7 +227,7 @@ class CopilotAgentExecutor(BaseAgentExecutor):
             text_chunk is empty when tool_calls is non-empty and vice versa.
         """
         try:
-            import httpx
+            import httpx  # noqa: PLC0415
         except ImportError as exc:
             raise ImportError("httpx is required for CopilotAgentExecutor") from exc
 

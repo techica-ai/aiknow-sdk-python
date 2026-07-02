@@ -8,6 +8,7 @@ import threading as _threading
 from typing import Any, Self, cast
 
 import httpx
+from _per_request_client import _PerRequestClient
 from aiknow_contracts.knowledge import Chunk, ParsedDocument
 
 from ._auth_flow import AIKnowAuth
@@ -227,7 +228,7 @@ class AsyncAIKnowClient:
             return cast(dict[str, Any], res.json())
         except Exception as exc:
             # Fire-and-forget: log but never raise so callers aren't disrupted
-            import logging
+            import logging  # noqa: PLC0415
             logging.getLogger(__name__).warning(
                 "push_trace failed (trace_id=%s): %s", trace.get("trace_id"), exc
             )
@@ -420,7 +421,6 @@ class AsyncAIKnowClient:
         Returns:
             AsyncAIKnowClient instance with resources bound to the per-request client.
         """
-        from ._per_request_client import _PerRequestClient
 
         shared = _get_shared_http_client()
         per_req = _PerRequestClient(shared, bearer_token, tenant_id)

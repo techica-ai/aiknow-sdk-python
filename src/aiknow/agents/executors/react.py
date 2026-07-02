@@ -43,7 +43,7 @@ class ReActAgentExecutor(BaseAgentExecutor):
 
         Delegates to CopilotAgentExecutor for SSE streaming.
         """
-        from aiknow.agents.executors.copilot import CopilotAgentExecutor
+        from aiknow.agents.executors.copilot import CopilotAgentExecutor  # noqa: PLC0415
 
         copilot_executor = CopilotAgentExecutor(
             cls=self._cls,
@@ -73,7 +73,7 @@ class ReActAgentExecutor(BaseAgentExecutor):
         Returns:
             Full assistant text response.
         """
-        from aiknow.agents.base import AgentContext
+        from aiknow.agents.base import AgentContext  # noqa: PLC0415
 
         if ctx is None:
             ctx = AgentContext(tenant_id="")
@@ -133,7 +133,7 @@ class ReActAgentExecutor(BaseAgentExecutor):
             Raw OpenAI-format response dict.
         """
         try:
-            import httpx
+            import httpx  # noqa: PLC0415
         except ImportError as exc:
             raise ImportError("httpx is required for ReActAgentExecutor") from exc
 

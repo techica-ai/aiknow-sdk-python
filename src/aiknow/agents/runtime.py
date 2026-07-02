@@ -32,6 +32,7 @@ Usage (internal — called by AiknowApp)::
 """
 from __future__ import annotations
 
+import dataclasses
 import logging
 import os
 from dataclasses import dataclass
@@ -130,7 +131,6 @@ class AgentRuntime:
             )
 
         # Extract only known AgentMeta fields — put the rest into extra
-        import dataclasses
         known_fields = {f.name for f in dataclasses.fields(AgentMeta)}
         known_kwargs = {k: v for k, v in meta_dict.items() if k in known_fields}
         extra_kwargs = {k: v for k, v in meta_dict.items() if k not in known_fields}
@@ -191,10 +191,10 @@ class AgentRuntime:
             ImportError: If ``fastapi`` is not installed in the environment.
         """
         try:
-            from fastapi import APIRouter
-            from fastapi.responses import StreamingResponse
+            from fastapi import APIRouter  # noqa: PLC0415
+            from fastapi.responses import StreamingResponse  # noqa: PLC0415
 
-            from aiknow.agents._router_factory import make_agent_handler
+            from aiknow.agents._router_factory import make_agent_handler  # noqa: PLC0415
         except ImportError as exc:
             raise ImportError(
                 "fastapi is required to use AgentRuntime.build_router(). "
@@ -291,7 +291,7 @@ class AgentRuntime:
         """Instantiate the correct executor based on agent_type."""
         agent_type = meta.agent_type
         if agent_type == "copilot":
-            from aiknow.agents.executors.copilot import CopilotAgentExecutor
+            from aiknow.agents.executors.copilot import CopilotAgentExecutor  # noqa: PLC0415
             return CopilotAgentExecutor(
                 cls=cls,
                 meta=meta,
@@ -312,7 +312,7 @@ class AgentRuntime:
             )
 
         if agent_type == "router":
-            from aiknow.agents.executors.router import RouterAgentExecutor
+            from aiknow.agents.executors.router import RouterAgentExecutor  # noqa: PLC0415
             intents = meta.extra.get("intents", [])
             threshold = float(meta.extra.get("confidence_threshold", 0.6))
             timeout = float(meta.extra.get("llm_timeout", 10.0))

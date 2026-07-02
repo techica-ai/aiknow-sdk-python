@@ -4,6 +4,8 @@ Sync and Async Ingestion resources.
 from __future__ import annotations
 
 import asyncio
+import json
+import mimetypes
 import os
 import uuid
 import warnings
@@ -38,8 +40,6 @@ class _IngestionResourceBase:
         pipeline_config: dict | None = None,
     ) -> tuple[str, str, dict[str, str]]:
         """Prepare the upload payload and metadata."""
-        import json
-        import mimetypes
         sid = source_id or str(uuid.uuid4())
         mime_type, _ = mimetypes.guess_type(file_path)
         mime_type = mime_type or "application/octet-stream"

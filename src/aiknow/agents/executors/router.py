@@ -218,7 +218,7 @@ class RouterAgentExecutor:
         Never raises — returns method='none' on any error.
         """
         try:
-            import httpx
+            import httpx  # noqa: PLC0415
         except ImportError as exc:
             logger.error("RouterAgentExecutor: httpx not installed — LLM fallback disabled")
             raise RuntimeError("httpx is required for LLM classification") from exc

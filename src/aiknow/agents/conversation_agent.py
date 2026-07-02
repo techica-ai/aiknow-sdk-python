@@ -53,6 +53,8 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import Any
 
+from starlette.responses import StreamingResponse
+
 logger = logging.getLogger(__name__)
 
 
@@ -131,7 +133,6 @@ class AIKnowConversationAgent:
         Returns:
             starlette.responses.StreamingResponse with text/event-stream content type.
         """
-        from starlette.responses import StreamingResponse
 
         return StreamingResponse(
             self._stream_agui(body),
@@ -234,7 +235,7 @@ class AIKnowConversationAgent:
         Returns:
             Parsed ConversationTurn dict from Platform.
         """
-        from aiknow import AsyncAIKnowClient
+        from aiknow import AsyncAIKnowClient  # noqa: PLC0415
         async with AsyncAIKnowClient(
             base_url=self.platform_url,
             tenant_id=self.tenant_id,

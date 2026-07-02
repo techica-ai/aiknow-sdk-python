@@ -93,8 +93,8 @@ class CurrentDatetimeTool(BuiltinTool):
         tz_name: str = kwargs.get("timezone", "Asia/Ho_Chi_Minh")
 
         try:
-            import zoneinfo
-            from datetime import datetime
+            import zoneinfo  # noqa: PLC0415
+            from datetime import datetime  # noqa: PLC0415
 
             try:
                 tz = zoneinfo.ZoneInfo(tz_name)
@@ -116,5 +116,5 @@ class CurrentDatetimeTool(BuiltinTool):
                     return now.strftime("%Y-%m-%d %H:%M:%S %Z")
 
         except Exception:  # noqa: BLE001
-            from datetime import datetime
+            from datetime import datetime  # noqa: PLC0415
             return datetime.now().strftime("%Y-%m-%d %H:%M:%S")

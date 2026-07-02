@@ -38,6 +38,15 @@ import warnings
 from collections.abc import Callable
 from typing import Any, Literal
 
+from aiknow_contracts.extensions import (
+    AppManifest,
+    HookManifestContract,
+    SkillManifestContract,
+    ToolManifestContract,
+    WorkflowManifestContract,
+)
+from aiknow_contracts.workflow import DialogDeclaration, SlotDefinition, SOPDeclaration
+
 from aiknow._async_client import AsyncAIKnowClient
 from aiknow.extensions._local_registry import ExtensionEntry, LocalExtensionRegistry
 
@@ -105,7 +114,7 @@ class AiknowApp:
         self._platform_reachable = False
 
         # Agent layer — lazy init on first register_agent() call
-        from aiknow.agents.tool_registry import AppToolRegistry
+        from aiknow.agents.tool_registry import AppToolRegistry  # noqa: PLC0415
         self._tool_registry: AppToolRegistry = AppToolRegistry()
         self._agent_runtime: Any | None = None  # AgentRuntime — lazy init
 
@@ -385,7 +394,7 @@ class AiknowApp:
             executor = app.build_router_executor("sop_router")
             mgr = ConversationManager(client=sdk_client, router=executor)
         """
-        from aiknow.agents.executors.router import RouterAgentExecutor
+        from aiknow.agents.executors.router import RouterAgentExecutor  # noqa: PLC0415
 
         runtime = self._ensure_agent_runtime()
         entry = runtime.get_agent(agent_name)
@@ -413,7 +422,7 @@ class AiknowApp:
             The :class:`~aiknow.agents.AgentRuntime` instance.
         """
         if self._agent_runtime is None:
-            from aiknow.agents.runtime import AgentRuntime
+            from aiknow.agents.runtime import AgentRuntime  # noqa: PLC0415
             self._agent_runtime = AgentRuntime(
                 tool_registry=self._tool_registry,
             )
@@ -537,17 +546,6 @@ class AiknowApp:
         Returns:
             AppManifest Pydantic model ready for serialisation.
         """
-        from aiknow_contracts.extensions import (
-            AppManifest,
-            HookManifestContract,
-            SkillManifestContract,
-            WorkflowManifestContract,
-        )
-        from aiknow_contracts.workflow import (
-            DialogDeclaration,
-            SlotDefinition,
-            SOPDeclaration,
-        )
 
         # Build skill manifests
         skill_manifests = [
@@ -584,7 +582,7 @@ class AiknowApp:
                 )
                 triggers_obj = None
                 if raw_triggers is not None:
-                    from aiknow_contracts.workflow import WorkflowTriggers
+                    from aiknow_contracts.workflow import WorkflowTriggers  # noqa: PLC0415
                     if isinstance(raw_triggers, dict):
                         triggers_obj = WorkflowTriggers(**raw_triggers)
                     else:
@@ -649,7 +647,7 @@ class AiknowApp:
                 )
                 triggers_obj = None
                 if raw_triggers is not None:
-                    from aiknow_contracts.workflow import WorkflowTriggers
+                    from aiknow_contracts.workflow import WorkflowTriggers  # noqa: PLC0415
                     if isinstance(raw_triggers, dict):
                         triggers_obj = WorkflowTriggers(**raw_triggers)
                     else:
@@ -691,7 +689,6 @@ class AiknowApp:
         ]
 
         # Build tool manifests (Phase 2)
-        from aiknow_contracts.extensions import ToolManifestContract
         tool_manifests = [
             ToolManifestContract(
                 name=entry.metadata.get("name", entry.name),
@@ -722,7 +719,7 @@ class AiknowApp:
         crash the app (it will run without remote skill invocations).
         """
         try:
-            from aiknow.webhook_listener import WebhookListener
+            from aiknow.webhook_listener import WebhookListener  # noqa: PLC0415
             self._listener = WebhookListener(
                 registry=self._registry,
                 host=self._webhook_host,
