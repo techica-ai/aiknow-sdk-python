@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import logging
 import os
+import warnings
 from collections.abc import Callable
 from typing import Any, Literal
 
@@ -148,7 +149,6 @@ class AiknowApp:
             meta: dict[str, Any] = fn._step_meta
             ext_type: Literal["step"] = "step"
         elif hasattr(fn, "_skill_meta"):
-            import warnings
             warnings.warn(
                 f"'{fn.__name__}' uses deprecated @skill. Use @step instead.",
                 DeprecationWarning, stacklevel=2,
@@ -173,7 +173,6 @@ class AiknowApp:
             Use :meth:`register_step` instead. ``register_skill()`` will be
             removed in v3.0.
         """
-        import warnings
         warnings.warn(
             "register_skill() is deprecated. Use register_step() instead.",
             DeprecationWarning, stacklevel=2,

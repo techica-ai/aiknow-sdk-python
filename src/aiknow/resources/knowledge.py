@@ -37,6 +37,7 @@ no mutable state, only a reference to the shared ``httpx.AsyncClient``.
 from __future__ import annotations
 
 import logging
+import warnings
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -92,7 +93,6 @@ class AsyncKnowledgeResource:
     @staticmethod
     def _warn_deprecated() -> None:
         """Emit deprecation warning on actual method use, not construction (SDK-8)."""
-        import warnings
         warnings.warn(
             "client.knowledge is deprecated and will be removed in v5.0.0. "
             "Use Pipeline API (POST /pipelines) with retrieval stage instead.",
@@ -307,7 +307,6 @@ class KnowledgeResource:
     @staticmethod
     def _warn_deprecated() -> None:
         """Emit deprecation warning on actual method use, not construction."""
-        import warnings
         warnings.warn(
             "client.knowledge is deprecated and will be removed in v5.0.0. "
             "Use Pipeline API (POST /pipelines) with retrieval stage instead.",

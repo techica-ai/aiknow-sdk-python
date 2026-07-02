@@ -44,6 +44,7 @@ from aiknow.agents.context_providers import (
     ExecutionStateProvider,
     SessionInfoProvider,
 )
+from aiknow.agents.executors.react import ReActAgentExecutor
 from aiknow.agents.tool_registry import AppToolRegistry
 
 if TYPE_CHECKING:
@@ -301,7 +302,6 @@ class AgentRuntime:
             )
 
         if agent_type in ("rag", "autonomous", "conversation"):
-            from aiknow.agents.executors.react import ReActAgentExecutor
             return ReActAgentExecutor(
                 cls=cls,
                 meta=meta,
@@ -329,7 +329,6 @@ class AgentRuntime:
             "using ReActAgentExecutor as fallback.",
             agent_type,
         )
-        from aiknow.agents.executors.react import ReActAgentExecutor
         return ReActAgentExecutor(
             cls=cls,
             meta=meta,

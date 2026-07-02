@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import os
 import uuid
+import warnings
 from typing import Any
 
 import httpx
@@ -61,7 +62,6 @@ class IngestionResource(_IngestionResourceBase):
     @staticmethod
     def _warn_deprecated() -> None:
         """Emit deprecation warning on actual method use, not construction (SDK-8)."""
-        import warnings
         warnings.warn(
             "client.ingestion is deprecated and will be removed in v5.0.0. "
             "Use Pipeline API (POST /pipelines) with IngestPipelineConfig instead.",
@@ -168,7 +168,6 @@ class AsyncIngestionResource(_IngestionResourceBase):
     @staticmethod
     def _warn_deprecated() -> None:
         """Emit deprecation warning on actual method use, not construction (SDK-8)."""
-        import warnings
         warnings.warn(
             "client.ingestion is deprecated and will be removed in v5.0.0. "
             "Use Pipeline API (POST /pipelines) with IngestPipelineConfig instead.",
