@@ -7,7 +7,6 @@ import os
 from typing import Any, Self, cast
 
 import httpx
-
 from aiknow_contracts.knowledge import Chunk, ParsedDocument
 
 from ._auth_flow import AIKnowAuth
@@ -16,13 +15,13 @@ from .resources.auth import AuthResource
 from .resources.chat import ChatResource
 from .resources.conversation import ConversationResource
 from .resources.extensions import ExtensionsResource
+from .resources.graphs import GraphsResource
 from .resources.ingestion import IngestionResource
 from .resources.knowledge import KnowledgeResource
 from .resources.observe import ObserveResource
+from .resources.prompt_configs import PromptConfigResource
 from .resources.users import UsersResource
 from .resources.workflows import WorkflowsResource
-from .resources.graphs import GraphsResource
-from .resources.prompt_configs import PromptConfigResource
 
 
 class AIKnowClient:

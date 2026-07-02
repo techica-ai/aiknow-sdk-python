@@ -23,7 +23,7 @@ from aiknow.resources.conversation import (
     ConversationResource,
     GraphTurnResult,
 )
-from aiknow_contracts.chat_models import PillarType, CheckpointApprovalStatus
+from aiknow_contracts.chat_models import CheckpointApprovalStatus, PillarType
 
 # ---------------------------------------------------------------------------
 # Helpers

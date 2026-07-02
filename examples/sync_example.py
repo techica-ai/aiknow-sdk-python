@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 import tempfile
 
-from aiknow import AIKnowClient, AIKnowAPIError, AIKnowConnectionError
+from aiknow import AIKnowAPIError, AIKnowClient, AIKnowConnectionError
 
 
 def main() -> None:

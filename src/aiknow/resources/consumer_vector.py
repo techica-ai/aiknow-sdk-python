@@ -51,21 +51,21 @@ class AsyncConsumerVectorResource:
         self,
         name: str,
         vector_size: int,
-        distance: str = "cosine",
+        distance: str = "Cosine",
     ) -> None:
         """Create a consumer vector collection (idempotent).
 
         Args:
             name: Collection name. Auto-namespaced as ``consumer_{tenant}_{name}`` on the server.
             vector_size: Dimension of the embedding vectors.
-            distance: Distance metric — ``"cosine"`` (default), ``"euclid"``, or ``"dot"``.
+            distance: Distance metric — ``"Cosine"`` (default), ``"Euclid"``, or ``"Dot"``.
 
         Raises:
             httpx.HTTPStatusError: On HTTP error.
         """
         resp = await self._http.post(
             "/api/v1/consumer/vector/collections",
-            json={"name": name, "vector_size": vector_size, "distance": distance},
+            json={"name": name, "vector_size": vector_size, "distance": distance.capitalize()},
         )
         resp.raise_for_status()
 

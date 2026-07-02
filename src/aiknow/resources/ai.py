@@ -20,9 +20,6 @@ import logging
 from typing import Any
 
 import httpx
-
-from .._http import raise_for_status
-
 from aiknow_contracts.primitives import (
     ClassificationRequest,
     ClassificationResponse,
@@ -35,6 +32,8 @@ from aiknow_contracts.primitives import (
     SimilarityRequest,
     SimilarityResponse,
 )
+
+from .._http import raise_for_status
 
 logger = logging.getLogger(__name__)
 

@@ -8,27 +8,26 @@ import threading as _threading
 from typing import Any, Self, cast
 
 import httpx
-
 from aiknow_contracts.knowledge import Chunk, ParsedDocument
 
 from ._auth_flow import AIKnowAuth
 from ._http import _DEFAULT_BASE_URL
 from ._span_builder import SpanBuilder as SpanBuilder  # re-export
+from .resources.ai import AsyncAiResource
 from .resources.auth import AsyncAuthResource
 from .resources.chat import AsyncChatResource
+from .resources.consumer_vector import AsyncConsumerVectorResource
 from .resources.conversation import AsyncConversationResource
 from .resources.extensions import AsyncExtensionsResource
+from .resources.graphs import AsyncGraphsResource
 from .resources.ingestion import AsyncIngestionResource
 from .resources.knowledge import AsyncKnowledgeResource  # re-export
 from .resources.knowledge import KnowledgeChunk as KnowledgeChunk
+from .resources.kv_store import AsyncKVStoreResource
 from .resources.observe import AsyncObserveResource
+from .resources.prompt_configs import AsyncPromptConfigResource
 from .resources.users import AsyncUsersResource
 from .resources.workflows import AsyncWorkflowsResource
-from .resources.graphs import AsyncGraphsResource
-from .resources.ai import AsyncAiResource
-from .resources.kv_store import AsyncKVStoreResource
-from .resources.consumer_vector import AsyncConsumerVectorResource
-from .resources.prompt_configs import AsyncPromptConfigResource
 
 # ---------------------------------------------------------------------------
 # Shared HTTP transport singleton

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 
-from aiknow import AsyncAIKnowClient, AIKnowAPIError, AIKnowConnectionError
+from aiknow import AIKnowAPIError, AIKnowConnectionError, AsyncAIKnowClient
 
 
 async def main() -> None:

@@ -6,9 +6,9 @@ from __future__ import annotations
 from typing import Any, cast
 
 import httpx
+from aiknow_contracts.chat_models import CheckpointApprovalStatus, PillarType
 from pydantic import BaseModel
 
-from aiknow_contracts.chat_models import PillarType, CheckpointApprovalStatus
 from .._http import raise_for_status, wrap_httpx_errors
 
 

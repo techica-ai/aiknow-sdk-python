@@ -1,8 +1,10 @@
 import tempfile
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from aiknow import AIKnowClient
 from aiknow_contracts.graph_models import GraphType
+
 
 def test_graphs_sdk_register_from_yaml():
     yaml_content = """
@@ -63,8 +65,9 @@ async def test_async_graphs_sdk_register_from_yaml():
         tmp.write(yaml_content)
         tmp.flush()
         
-        from aiknow import AsyncAIKnowClient
         from unittest.mock import AsyncMock
+
+        from aiknow import AsyncAIKnowClient
         
         client = AsyncAIKnowClient(api_key="mock_key")
         client._client.post = AsyncMock()
