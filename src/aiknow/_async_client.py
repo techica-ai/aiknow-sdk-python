@@ -8,7 +8,7 @@ import threading as _threading
 from typing import Any, Self, cast
 
 import httpx
-from _per_request_client import _PerRequestClient
+from ._per_request_client import _PerRequestClient
 from aiknow_contracts.knowledge import Chunk, ParsedDocument
 
 from ._auth_flow import AIKnowAuth
