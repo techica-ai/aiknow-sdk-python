@@ -79,7 +79,7 @@ class KbSearchTool(BuiltinTool):
                 headers["Authorization"] = f"Bearer {ctx.api_key}"
 
             response = await ctx.http_client.post(
-                f"{ctx.platform_url}/api/v1/kb/search",
+                f"kb/search",
                 json=params,
                 headers=headers,
                 timeout=15.0,
@@ -131,7 +131,7 @@ class KbListSourcesTool(BuiltinTool):
             return "[kb_list_sources] HTTP client not configured."
 
         try:
-            url = f"{ctx.platform_url}/api/v1/kb"
+            url = f"kb"
             if kb_id:
                 url += f"/{kb_id}/sources"
             headers: dict[str, str] = {}
@@ -197,7 +197,7 @@ class KbGetDocumentTool(BuiltinTool):
                 headers["Authorization"] = f"Bearer {ctx.api_key}"
 
             response = await ctx.http_client.get(
-                f"{ctx.platform_url}/api/v1/kb/{kb_id}/documents/{doc_id}",
+                f"kb/{kb_id}/documents/{doc_id}",
                 headers=headers,
                 timeout=10.0,
             )

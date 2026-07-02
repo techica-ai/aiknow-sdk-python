@@ -74,7 +74,7 @@ class GetConversationHistoryTool(BuiltinTool):
                 headers["Authorization"] = f"Bearer {ctx.api_key}"
 
             response = await ctx.http_client.get(
-                f"{ctx.platform_url}/api/v1/sessions/{session_id}/history",
+                f"sessions/{session_id}/history",
                 params={"limit": last_n},
                 headers=headers,
                 timeout=10.0,
@@ -143,7 +143,7 @@ class SaveAgentNoteTool(BuiltinTool):
                 headers["Authorization"] = f"Bearer {ctx.api_key}"
 
             response = await ctx.http_client.post(
-                f"{ctx.platform_url}/api/v1/sessions/{session_id}/notes",
+                f"sessions/{session_id}/notes",
                 json={"note": note, "category": category},
                 headers=headers,
                 timeout=10.0,

@@ -90,7 +90,7 @@ class AsyncAiResource:
             raw_prompt=raw_prompt,
         )
         resp = await self._http.post(
-            "/api/v1/ai/extract",
+            "ai/extract",
             json=request.model_dump(exclude_none=True, by_alias=True),
         )
         raise_for_status("ai", resp)
@@ -122,7 +122,7 @@ class AsyncAiResource:
             model=model,
         )
         resp = await self._http.post(
-            "/api/v1/ai/classify",
+            "ai/classify",
             json=request.model_dump(exclude_none=True, by_alias=True),
         )
         raise_for_status("ai", resp)
@@ -158,7 +158,7 @@ class AsyncAiResource:
             model=model,
         )
         resp = await self._http.post(
-            "/api/v1/ai/evaluate",
+            "ai/evaluate",
             json=request.model_dump(exclude_none=True, by_alias=True),
         )
         raise_for_status("ai", resp)
@@ -197,7 +197,7 @@ class AsyncAiResource:
             raw_prompt=raw_prompt,
         )
         resp = await self._http.post(
-            "/api/v1/ai/generate",
+            "ai/generate",
             json=request.model_dump(exclude_none=True, by_alias=True),
         )
         raise_for_status("ai", resp)
@@ -224,7 +224,7 @@ class AsyncAiResource:
         """
         request = SimilarityRequest(text_a=text_a, text_b=text_b, model=model)
         resp = await self._http.post(
-            "/api/v1/embedding/similarity",
+            "embedding/similarity",
             json=request.model_dump(exclude_none=True, by_alias=True),
         )
         raise_for_status("ai", resp)

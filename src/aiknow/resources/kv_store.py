@@ -24,7 +24,7 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-_BASE_PATH = "/api/v1/consumer/sessions"
+_BASE_PATH = "consumer/sessions"
 
 
 class AsyncKVStoreResource:

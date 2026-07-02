@@ -53,7 +53,7 @@ class GetExecutionStatusTool(BuiltinTool):
             if ctx.api_key:
                 headers["Authorization"] = f"Bearer {ctx.api_key}"
             response = await ctx.http_client.get(
-                f"{ctx.platform_url}/api/v1/executions/{exec_id}",
+                f"executions/{exec_id}",
                 headers=headers,
                 timeout=10.0,
             )
@@ -108,7 +108,7 @@ class ListExecutionsTool(BuiltinTool):
                 headers["Authorization"] = f"Bearer {ctx.api_key}"
 
             response = await ctx.http_client.get(
-                f"{ctx.platform_url}/api/v1/executions",
+                f"executions",
                 params=params,
                 headers=headers,
                 timeout=10.0,
@@ -178,7 +178,7 @@ class AdvanceExecutionTool(BuiltinTool):
                 headers["Authorization"] = f"Bearer {ctx.api_key}"
 
             response = await ctx.http_client.post(
-                f"{ctx.platform_url}/api/v1/executions/{exec_id}/advance",
+                f"executions/{exec_id}/advance",
                 json={"signal": signal},
                 headers=headers,
                 timeout=15.0,
@@ -259,7 +259,7 @@ class EscalateToSupervisorTool(BuiltinTool):
                 payload["notes"] = notes
 
             response = await ctx.http_client.post(
-                f"{ctx.platform_url}/api/v1/escalations",
+                f"escalations",
                 json=payload,
                 headers=headers,
                 timeout=10.0,
@@ -312,7 +312,7 @@ class GetWorkflowDefinitionTool(BuiltinTool):
                 headers["Authorization"] = f"Bearer {ctx.api_key}"
 
             response = await ctx.http_client.get(
-                f"{ctx.platform_url}/api/v1/workflow/definitions/{workflow_id}",
+                f"workflow/definitions/{workflow_id}",
                 headers=headers,
                 timeout=10.0,
             )

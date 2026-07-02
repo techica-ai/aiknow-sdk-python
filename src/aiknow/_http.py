@@ -18,7 +18,7 @@ from ._exceptions import (
 
 # Single source of truth for the default base URL (SDK-7 fix).
 # Both sync and async clients import this instead of defining their own copy.
-_DEFAULT_BASE_URL = "http://localhost:8000/api/v1"
+_DEFAULT_BASE_URL = "http://localhost:8000/api/v1/"
 
 
 @runtime_checkable

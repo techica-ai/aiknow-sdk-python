@@ -60,6 +60,10 @@ def _get_shared_http_client() -> httpx.AsyncClient:
                 base = (
                     os.environ.get("AIKNOW_BASE_URL") or _DEFAULT_BASE_URL
                 ).rstrip("/")
+                if not base.endswith("/v1"):
+                    base = f"{base}/api/v1"
+                base += "/"
+                
                 _SHARED_HTTP_CLIENT = httpx.AsyncClient(
                     base_url=base,
                     timeout=httpx.Timeout(60.0),
@@ -223,7 +227,7 @@ class AsyncAIKnowClient:
         """
         payload = {**trace, "spans": spans}
         try:
-            res = await self._client.post("/api/v1/observe/push", json=payload)
+            res = await self._client.post("observe/push", json=payload)
             res.raise_for_status()
             return cast(dict[str, Any], res.json())
         except Exception as exc:
@@ -268,7 +272,7 @@ class AsyncAIKnowClient:
             "config": config,
             "persist": persist,
         }
-        res = await self._client.post("/pipeline/parse", json=payload)
+        res = await self._client.post("pipeline/parse", json=payload)
         res.raise_for_status()
         return cast(dict[str, Any], res.json())
 
@@ -292,13 +296,13 @@ class AsyncAIKnowClient:
             "dialog_config": dialog_config,
             "persist": persist,
         }
-        res = await self._client.post("/pipeline/chunk", json=payload)
+        res = await self._client.post("pipeline/chunk", json=payload)
         res.raise_for_status()
         return cast(dict[str, Any], res.json())
 
     async def get_state(self, state_token: str) -> Any:
         """Fetch intermediate pipeline state from token and deserialize it (async)."""
-        res = await self._client.get(f"/pipeline/state/{state_token}")
+        res = await self._client.get(f"pipeline/state/{state_token}")
         res.raise_for_status()
         payload = res.json()
         data_type = payload["type"]
@@ -313,21 +317,21 @@ class AsyncAIKnowClient:
 
     async def list_states(self) -> list[dict[str, Any]]:
         """List all active and persistent states (async)."""
-        res = await self._client.get("/pipeline/states")
+        res = await self._client.get("pipeline/states")
         res.raise_for_status()
         return cast(list[dict[str, Any]], res.json())
 
     async def embed(self, texts: list[str], model: str = "default") -> list[list[float]]:
         """Embed a list of text strings (async)."""
         payload = {"texts": texts, "model": model}
-        res = await self._client.post("/pipeline/embed", json=payload)
+        res = await self._client.post("pipeline/embed", json=payload)
         res.raise_for_status()
         return cast(list[list[float]], res.json())
 
     async def embed_chunks(self, state_token: str, model: str = "default") -> dict[str, Any]:
         """Embed document chunks referenced by a state token (async)."""
         payload = {"state_token": state_token, "model": model}
-        res = await self._client.post("/pipeline/embed-chunks", json=payload)
+        res = await self._client.post("pipeline/embed-chunks", json=payload)
         res.raise_for_status()
         return cast(dict[str, Any], res.json())
 
@@ -343,7 +347,7 @@ class AsyncAIKnowClient:
             "extract_entities": extract_entities,
             "extract_relations": extract_relations,
         }
-        res = await self._client.post("/pipeline/extract", json=payload)
+        res = await self._client.post("pipeline/extract", json=payload)
         res.raise_for_status()
         return cast(dict[str, Any], res.json())
 
@@ -359,7 +363,7 @@ class AsyncAIKnowClient:
             "extract_entities": extract_entities,
             "extract_relations": extract_relations,
         }
-        res = await self._client.post("/pipeline/extract-chunks", json=payload)
+        res = await self._client.post("pipeline/extract-chunks", json=payload)
         res.raise_for_status()
         return cast(dict[str, Any], res.json())
 
@@ -383,7 +387,7 @@ class AsyncAIKnowClient:
             "vector_weight": vector_weight,
             "keyword_weight": keyword_weight,
         }
-        res = await self._client.post("/pipeline/retrieve", json=payload)
+        res = await self._client.post("pipeline/retrieve", json=payload)
         res.raise_for_status()
         return cast(list[dict[str, Any]], res.json())
 
@@ -444,7 +448,7 @@ class AsyncAIKnowClient:
         
         # Add new resources
         instance.ai = AsyncAiResource(per_req)                  # type: ignore[arg-type]
-        instance.kv_store = AsyncKVStoreResource(per_req)       # type: ignore[arg-type]
+        instance.kv = AsyncKVStoreResource(per_req)              # type: ignore[arg-type]
         instance.consumer_vector = AsyncConsumerVectorResource(per_req) # type: ignore[arg-type]
         instance.prompt_configs = AsyncPromptConfigResource(per_req)    # type: ignore[arg-type]
         instance._client = per_req      # type: ignore[assignment]

@@ -1,13 +1,13 @@
 """
 AsyncConsumerVectorResource — SDK resource for consumer vector store operations.
 
-Maps to the /api/v1/consumer/vector/* endpoints backed by Qdrant.
+Maps to the consumer/vector/* endpoints backed by Qdrant.
 
 Methods:
-    create_collection(name, vector_size, distance)  → POST   /api/v1/consumer/vector/collections
-    delete_collection(name)                         → DELETE /api/v1/consumer/vector/collections/{name}
-    upsert(collection, points)                      → POST   /api/v1/consumer/vector/upsert
-    search(collection, query, top_k, threshold)     → POST   /api/v1/consumer/vector/search
+    create_collection(name, vector_size, distance)  → POST   consumer/vector/collections
+    delete_collection(name)                         → DELETE consumer/vector/collections/{name}
+    upsert(collection, points)                      → POST   consumer/vector/upsert
+    search(collection, query, top_k, threshold)     → POST   consumer/vector/search
 
 Design:
     - Collections are auto-namespaced consumer_{tenant_id}_{name} on the server.
@@ -64,7 +64,7 @@ class AsyncConsumerVectorResource:
             httpx.HTTPStatusError: On HTTP error.
         """
         resp = await self._http.post(
-            "/api/v1/consumer/vector/collections",
+            "consumer/vector/collections",
             json={"name": name, "vector_size": vector_size, "distance": distance.capitalize()},
         )
         resp.raise_for_status()
@@ -80,7 +80,7 @@ class AsyncConsumerVectorResource:
             httpx.HTTPStatusError: On HTTP error.
         """
         resp = await self._http.delete(
-            f"/api/v1/consumer/vector/collections/{name}",
+            f"consumer/vector/collections/{name}",
         )
         resp.raise_for_status()
 
@@ -109,7 +109,7 @@ class AsyncConsumerVectorResource:
             httpx.HTTPStatusError: On HTTP error.
         """
         resp = await self._http.post(
-            "/api/v1/consumer/vector/upsert",
+            "consumer/vector/upsert",
             json={"collection": collection, "points": points},
         )
         resp.raise_for_status()
@@ -151,7 +151,7 @@ class AsyncConsumerVectorResource:
             body["filters"] = filters
 
         resp = await self._http.post(
-            "/api/v1/consumer/vector/search",
+            "consumer/vector/search",
             json=body,
         )
         resp.raise_for_status()

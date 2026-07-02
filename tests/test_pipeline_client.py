@@ -26,7 +26,7 @@ class TestSDKPipelineOperations:
                 res = client.parse(source_id="src-123", parser="markitdown", persist=True)
                 assert res["state_token"] == "st_test_parse"
                 mock_post.assert_called_once_with(
-                    "/pipeline/parse",
+                    "pipeline/parse",
                     json={
                         "source_id": "src-123",
                         "parser": "markitdown",
@@ -48,7 +48,7 @@ class TestSDKPipelineOperations:
                 res = client.chunk(state_token="st_test_parse", persist=True)
                 assert res["state_token"] == "st_test_chunk"
                 mock_post.assert_called_once_with(
-                    "/pipeline/chunk",
+                    "pipeline/chunk",
                     json={
                         "state_token": "st_test_parse",
                         "document": None,
@@ -76,7 +76,7 @@ class TestSDKPipelineOperations:
                 doc = client.get_state("st_test_parse")
                 assert isinstance(doc, ParsedDocument)
                 assert doc.source_id == "src-123"
-                mock_get.assert_called_once_with("/pipeline/state/st_test_parse")
+                mock_get.assert_called_once_with("pipeline/state/st_test_parse")
 
     def test_sync_get_state_chunks(self) -> None:
         with AIKnowClient(api_key="test-key") as client:
@@ -120,7 +120,7 @@ class TestSDKPipelineOperations:
                 res = client.list_states()
                 assert len(res) == 1
                 assert res[0]["state_token"] == "st_token"
-                mock_get.assert_called_once_with("/pipeline/states")
+                mock_get.assert_called_once_with("pipeline/states")
 
     @pytest.mark.asyncio
     async def test_async_parse(self) -> None:
@@ -140,7 +140,7 @@ class TestSDKPipelineOperations:
                 res = await client.parse(source_id="src-123", parser="markitdown", persist=True)
                 assert res["state_token"] == "st_test_parse"
                 mock_post.assert_called_once_with(
-                    "/pipeline/parse",
+                    "pipeline/parse",
                     json={
                         "source_id": "src-123",
                         "parser": "markitdown",
@@ -166,7 +166,7 @@ class TestSDKPipelineOperations:
                 res = await client.chunk(state_token="st_test_parse", persist=True)
                 assert res["state_token"] == "st_test_chunk"
                 mock_post.assert_called_once_with(
-                    "/pipeline/chunk",
+                    "pipeline/chunk",
                     json={
                         "state_token": "st_test_parse",
                         "document": None,
@@ -198,7 +198,7 @@ class TestSDKPipelineOperations:
                 doc = await client.get_state("st_test_parse")
                 assert isinstance(doc, ParsedDocument)
                 assert doc.source_id == "src-123"
-                mock_get.assert_called_once_with("/pipeline/state/st_test_parse")
+                mock_get.assert_called_once_with("pipeline/state/st_test_parse")
 
     @pytest.mark.asyncio
     async def test_async_list_states(self) -> None:
@@ -221,4 +221,4 @@ class TestSDKPipelineOperations:
                 res = await client.list_states()
                 assert len(res) == 1
                 assert res[0]["state_token"] == "st_token"
-                mock_get.assert_called_once_with("/pipeline/states")
+                mock_get.assert_called_once_with("pipeline/states")

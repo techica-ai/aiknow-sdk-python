@@ -59,6 +59,10 @@ class AIKnowClient:
             or os.environ.get("AIKNOW_BASE_URL")
             or _DEFAULT_BASE_URL
         ).rstrip("/")
+        if not resolved_base.endswith("/v1"):
+            resolved_base = f"{resolved_base}/api/v1"
+        resolved_base += "/"
+        
         resolved_api_key = api_key or os.environ.get("AIKNOW_API_KEY")
         resolved_admin_key = admin_key or os.environ.get("AIKNOW_ADMIN_KEY")
 
@@ -147,7 +151,7 @@ class AIKnowClient:
             "config": config,
             "persist": persist,
         }
-        res = self._client.post("/pipeline/parse", json=payload)
+        res = self._client.post("pipeline/parse", json=payload)
         res.raise_for_status()
         return cast(dict[str, Any], res.json())
 
@@ -171,13 +175,13 @@ class AIKnowClient:
             "dialog_config": dialog_config,
             "persist": persist,
         }
-        res = self._client.post("/pipeline/chunk", json=payload)
+        res = self._client.post("pipeline/chunk", json=payload)
         res.raise_for_status()
         return cast(dict[str, Any], res.json())
 
     def get_state(self, state_token: str) -> Any:
         """Fetch intermediate pipeline state from token and deserialize it (sync)."""
-        res = self._client.get(f"/pipeline/state/{state_token}")
+        res = self._client.get(f"pipeline/state/{state_token}")
         res.raise_for_status()
         payload = res.json()
         data_type = payload["type"]
@@ -192,21 +196,21 @@ class AIKnowClient:
 
     def list_states(self) -> list[dict[str, Any]]:
         """List all active and persistent states (sync)."""
-        res = self._client.get("/pipeline/states")
+        res = self._client.get("pipeline/states")
         res.raise_for_status()
         return cast(list[dict[str, Any]], res.json())
 
     def embed(self, texts: list[str], model: str = "default") -> list[list[float]]:
         """Embed a list of text strings (sync)."""
         payload = {"texts": texts, "model": model}
-        res = self._client.post("/pipeline/embed", json=payload)
+        res = self._client.post("pipeline/embed", json=payload)
         res.raise_for_status()
         return cast(list[list[float]], res.json())
 
     def embed_chunks(self, state_token: str, model: str = "default") -> dict[str, Any]:
         """Embed document chunks referenced by a state token (sync)."""
         payload = {"state_token": state_token, "model": model}
-        res = self._client.post("/pipeline/embed-chunks", json=payload)
+        res = self._client.post("pipeline/embed-chunks", json=payload)
         res.raise_for_status()
         return cast(dict[str, Any], res.json())
 
@@ -222,7 +226,7 @@ class AIKnowClient:
             "extract_entities": extract_entities,
             "extract_relations": extract_relations,
         }
-        res = self._client.post("/pipeline/extract", json=payload)
+        res = self._client.post("pipeline/extract", json=payload)
         res.raise_for_status()
         return cast(dict[str, Any], res.json())
 
@@ -238,7 +242,7 @@ class AIKnowClient:
             "extract_entities": extract_entities,
             "extract_relations": extract_relations,
         }
-        res = self._client.post("/pipeline/extract-chunks", json=payload)
+        res = self._client.post("pipeline/extract-chunks", json=payload)
         res.raise_for_status()
         return cast(dict[str, Any], res.json())
 
@@ -262,6 +266,6 @@ class AIKnowClient:
             "vector_weight": vector_weight,
             "keyword_weight": keyword_weight,
         }
-        res = self._client.post("/pipeline/retrieve", json=payload)
+        res = self._client.post("pipeline/retrieve", json=payload)
         res.raise_for_status()
         return cast(list[dict[str, Any]], res.json())
